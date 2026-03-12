@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \":*)",
+      "Bash(mvn compile -q)",
+      "Bash(npx @angular/cli@19 new frontend --standalone --routing --style=css --skip-git --skip-tests=false --ssr=false)",
+      "Bash(npm install -D tailwindcss @tailwindcss/forms @tailwindcss/typography)",
+      "Bash(npx ng build)"
+    ]
+  }
+}

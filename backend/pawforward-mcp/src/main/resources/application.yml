@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: pawforward-mcp
+
+server:
+  port: 8081
+
+pawforward:
+  api:
+    base-url: http://localhost:8080/api/v1
+    service-key: ${PAWFORWARD_SERVICE_KEY:dev-service-key}
