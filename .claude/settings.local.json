@@ -5,7 +5,8 @@
       "Bash(mvn compile -q)",
       "Bash(npx @angular/cli@19 new frontend --standalone --routing --style=css --skip-git --skip-tests=false --ssr=false)",
       "Bash(npm install -D tailwindcss @tailwindcss/forms @tailwindcss/typography)",
-      "Bash(npx ng build)"
+      "Bash(npx ng build)",
+      "Bash(ls -1 /c/Users/langn/Skillstorm/Training/projects/PetTraning/frontend/src/app/features/auth/pages/*/)"
     ]
   }
 }
