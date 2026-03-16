@@ -7,10 +7,24 @@ export interface ServiceType {
   maxParticipants?: number;
   price: number;
   depositAmount?: number;
-  isActive: boolean;
+  active: boolean;
   sortOrder: number;
   imageUrl?: string;
   createdAt: string;
+  updatedAt: string;
+}
+
+export interface ServiceTypeRequest {
+  name: string;
+  category: ServiceCategory;
+  description?: string;
+  durationMinutes?: number;
+  maxParticipants?: number;
+  price: number;
+  depositAmount?: number;
+  active?: boolean;
+  sortOrder?: number;
+  imageUrl?: string;
 }
 
 export enum ServiceCategory {

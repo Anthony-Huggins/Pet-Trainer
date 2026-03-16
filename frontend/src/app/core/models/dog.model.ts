@@ -16,6 +16,19 @@ export interface Dog {
   updatedAt: string;
 }
 
+export interface DogRequest {
+  name: string;
+  breed?: string;
+  dateOfBirth?: string;
+  weightLbs?: number;
+  gender?: string;
+  spayedNeutered?: boolean;
+  microchipId?: string;
+  veterinarianName?: string;
+  veterinarianPhone?: string;
+  specialNeeds?: string;
+}
+
 export interface DogVaccination {
   id: string;
   dogId: string;
@@ -23,5 +36,11 @@ export interface DogVaccination {
   administeredDate: string;
   expirationDate?: string;
   documentUrl?: string;
-  createdAt: string;
+}
+
+export interface DogVaccinationRequest {
+  vaccinationName: string;
+  administeredDate: string;
+  expirationDate?: string;
+  documentUrl?: string;
 }

@@ -1,16 +1,25 @@
 export interface TrainerProfile {
   id: string;
   userId: string;
-  firstName: string;
-  lastName: string;
+  name: string;
+  email: string;
   bio?: string;
   specializations: string[];
   certifications: string[];
   yearsExperience?: number;
   hourlyRate?: number;
   profilePhotoUrl?: string;
-  isAcceptingClients: boolean;
+  acceptingClients: boolean;
   createdAt: string;
+}
+
+export interface TrainerProfileRequest {
+  bio?: string;
+  specializations?: string[];
+  certifications?: string[];
+  yearsExperience?: number;
+  hourlyRate?: number;
+  acceptingClients?: boolean;
 }
 
 export interface TrainerAvailability {
@@ -19,9 +28,18 @@ export interface TrainerAvailability {
   dayOfWeek: number;
   startTime: string;
   endTime: string;
-  isRecurring: boolean;
+  recurring: boolean;
   specificDate?: string;
-  isAvailable: boolean;
+  available: boolean;
+}
+
+export interface TrainerAvailabilityRequest {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  recurring?: boolean;
+  specificDate?: string;
+  available?: boolean;
 }
 
 export interface AvailableSlot {

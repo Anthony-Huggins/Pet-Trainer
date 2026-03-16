@@ -1,17 +1,19 @@
 export interface Booking {
   id: string;
-  sessionId: string;
   clientId: string;
+  clientName: string;
   dogId: string;
+  dogName: string;
+  session: Session;
   status: BookingStatus;
   cancellationReason?: string;
   createdAt: string;
   updatedAt: string;
-  // Populated fields
-  session?: Session;
-  dog?: { id: string; name: string; breed?: string };
-  trainer?: { id: string; firstName: string; lastName: string };
-  serviceName?: string;
+}
+
+export interface BookingRequest {
+  sessionId: string;
+  dogId: string;
 }
 
 export enum BookingStatus {
@@ -25,20 +27,25 @@ export enum BookingStatus {
 export interface Session {
   id: string;
   serviceTypeId?: string;
+  serviceTypeName?: string;
   classSeriesId?: string;
   trainerId: string;
+  trainerName: string;
   sessionDate: string;
   startTime: string;
   endTime: string;
   location?: string;
   status: string;
   notes?: string;
+  createdAt: string;
 }
 
 export interface ClassSeries {
   id: string;
   serviceTypeId: string;
+  serviceTypeName: string;
   trainerId: string;
+  trainerName: string;
   title: string;
   description?: string;
   startDate: string;
@@ -49,5 +56,33 @@ export interface ClassSeries {
   location?: string;
   maxParticipants: number;
   currentEnrollment: number;
+  spotsAvailable: number;
   status: string;
+  createdAt: string;
+}
+
+export interface ClassEnrollment {
+  id: string;
+  classSeriesId: string;
+  classSeriesTitle: string;
+  clientId: string;
+  clientName: string;
+  dogId: string;
+  dogName: string;
+  status: EnrollmentStatus;
+  waitlistPosition?: number;
+  enrolledAt: string;
+  createdAt: string;
+}
+
+export interface ClassEnrollmentRequest {
+  classSeriesId: string;
+  dogId: string;
+}
+
+export enum EnrollmentStatus {
+  ENROLLED = 'ENROLLED',
+  WAITLISTED = 'WAITLISTED',
+  DROPPED = 'DROPPED',
+  COMPLETED = 'COMPLETED',
 }
