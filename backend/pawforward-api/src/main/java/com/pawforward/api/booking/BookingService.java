@@ -83,10 +83,21 @@ public class BookingService {
             throw new AccessDeniedException("You can only book sessions for your own dogs");
         }
 
-        // Check for duplicate booking
+        // Check for duplicate booking by this client
         if (bookingRepository.existsBySessionIdAndClientIdAndStatusNot(
                 session.getId(), client.getId(), BookingStatus.CANCELLED)) {
             throw new IllegalStateException("You already have a booking for this session");
+        }
+
+        // For private sessions (no class series), only one active booking allowed per session
+        if (session.getClassSeries() == null) {
+            List<Booking> existingBookings = bookingRepository.findBySessionId(session.getId())
+                    .stream()
+                    .filter(b -> b.getStatus() != BookingStatus.CANCELLED)
+                    .toList();
+            if (!existingBookings.isEmpty()) {
+                throw new IllegalStateException("This session is already booked by another client");
+            }
         }
 
         Booking booking = Booking.builder()

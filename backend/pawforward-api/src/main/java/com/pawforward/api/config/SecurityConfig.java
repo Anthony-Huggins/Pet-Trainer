@@ -59,6 +59,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/trainers/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reviews").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/scheduling/class-series/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/scheduling/available-slots").permitAll()
                         // Public contact form
                         .requestMatchers(HttpMethod.POST, "/api/v1/contact").permitAll()
                         // API docs

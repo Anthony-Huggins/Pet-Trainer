@@ -43,9 +43,10 @@ export interface TrainerAvailabilityRequest {
 }
 
 export interface AvailableSlot {
+  trainerId: string;
+  trainerName: string;
   date: string;
   startTime: string;
   endTime: string;
-  trainerId: string;
-  trainerName: string;
+  durationMinutes: number;
 }

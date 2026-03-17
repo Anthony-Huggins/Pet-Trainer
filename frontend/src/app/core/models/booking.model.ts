@@ -86,3 +86,27 @@ export enum EnrollmentStatus {
   DROPPED = 'DROPPED',
   COMPLETED = 'COMPLETED',
 }
+
+export interface SessionRequest {
+  serviceTypeId: string;
+  trainerId: string;
+  sessionDate: string;
+  startTime: string;
+  endTime: string;
+  location?: string;
+  notes?: string;
+}
+
+export interface ClassSeriesRequest {
+  serviceTypeId: string;
+  trainerId: string;
+  title: string;
+  description?: string;
+  startDate: string;
+  endDate: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  location?: string;
+  maxParticipants: number;
+}
