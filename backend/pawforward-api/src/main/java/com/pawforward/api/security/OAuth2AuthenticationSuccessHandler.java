@@ -7,6 +7,7 @@ import com.pawforward.api.user.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
@@ -23,7 +24,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final String frontendUrl;
 
     public OAuth2AuthenticationSuccessHandler(
-            AuthService authService,
+            @Lazy AuthService authService,
             UserRepository userRepository,
             @Value("${app.cors.allowed-origins}") String frontendUrl) {
         this.authService = authService;

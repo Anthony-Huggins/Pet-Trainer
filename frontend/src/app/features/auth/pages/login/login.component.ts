@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
+import { UserRole } from '../../../../core/models';
 import { environment } from '../../../../../environments/environment';
 
 @Component({
@@ -151,8 +152,15 @@ export class LoginComponent {
     this.errorMessage.set('');
 
     this.authService.login({ email: this.email, password: this.password }).subscribe({
-      next: () => {
-        this.router.navigate(['/dashboard']);
+      next: (response) => {
+        const role = response.user.role;
+        if (role === UserRole.ADMIN) {
+          this.router.navigate(['/admin']);
+        } else if (role === UserRole.TRAINER) {
+          this.router.navigate(['/trainer']);
+        } else {
+          this.router.navigate(['/dashboard']);
+        }
       },
       error: (err) => {
         this.isLoading.set(false);

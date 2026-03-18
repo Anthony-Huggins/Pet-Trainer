@@ -1,8 +1,221 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-training-log-create',
   standalone: true,
-  template: `<div class="max-w-6xl mx-auto py-16 px-6"><h1 class="text-3xl font-bold text-slate-800">Create Training Log</h1><p class="text-slate-500 mt-4">Coming soon</p></div>`,
+  imports: [FormsModule],
+  template: `
+    <div class="min-h-screen bg-slate-100">
+      <div class="max-w-3xl mx-auto py-10 px-6">
+
+        @if (saved()) {
+          <!-- Success State -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-16 text-center">
+            <div class="w-16 h-16 mx-auto rounded-full bg-[#10B981]/10 flex items-center justify-center mb-4">
+              <svg class="w-8 h-8 text-[#10B981]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">Training Log Saved!</h2>
+            <p class="text-slate-500 mb-6">Your training log has been recorded successfully.</p>
+            <button
+              (click)="resetForm()"
+              class="px-6 py-2.5 rounded-lg bg-[#F59E0B] text-white font-medium hover:bg-[#F59E0B]/90 transition-colors"
+            >Create Another Log</button>
+          </div>
+        } @else {
+          <!-- Form -->
+          <h1 class="text-3xl font-bold text-slate-800 mb-8">Create Training Log</h1>
+
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 divide-y divide-slate-100">
+
+            <!-- Session Details Section -->
+            <div class="p-6">
+              <h2 class="text-lg font-semibold text-slate-800 mb-4">Session Details</h2>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Client / Dog</label>
+                  <select
+                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0D7377]/30 focus:border-[#0D7377]"
+                    [ngModel]="selectedClient()"
+                    (ngModelChange)="selectedClient.set($event)"
+                  >
+                    <option value="">Select a client...</option>
+                    <option value="sarah-luna">Sarah Johnson - Luna (Golden Retriever)</option>
+                    <option value="david-max">David Chen - Max (French Bulldog)</option>
+                    <option value="emily-bella">Emily Rodriguez - Bella (Border Collie)</option>
+                    <option value="michael-rocky">Michael Park - Rocky (German Shepherd)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Session</label>
+                  <select
+                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0D7377]/30 focus:border-[#0D7377]"
+                    [ngModel]="selectedSession()"
+                    (ngModelChange)="selectedSession.set($event)"
+                  >
+                    <option value="">Select a session...</option>
+                    <option value="basic-obedience">Basic Obedience</option>
+                    <option value="puppy-socialization">Puppy Socialization</option>
+                    <option value="advanced-agility">Advanced Agility</option>
+                    <option value="leash-reactivity">Leash Reactivity</option>
+                    <option value="board-and-train">Board & Train</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                  <input
+                    type="date"
+                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0D7377]/30 focus:border-[#0D7377]"
+                    [ngModel]="sessionDate()"
+                    (ngModelChange)="sessionDate.set($event)"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Session Rating</label>
+                  <div class="flex items-center gap-1 mt-1">
+                    @for (star of [1,2,3,4,5]; track star) {
+                      <button
+                        type="button"
+                        (click)="rating.set(star)"
+                        class="focus:outline-none"
+                      >
+                        <svg
+                          class="w-8 h-8 transition-colors"
+                          [class]="star <= rating() ? 'text-[#F59E0B]' : 'text-slate-200 hover:text-[#F59E0B]/50'"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Training Notes Section -->
+            <div class="p-6">
+              <h2 class="text-lg font-semibold text-slate-800 mb-4">Training Notes</h2>
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">
+                    Summary <span class="text-[#F87171]">*</span>
+                  </label>
+                  <textarea
+                    rows="3"
+                    placeholder="Provide a brief summary of this session..."
+                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D7377]/30 focus:border-[#0D7377] resize-none"
+                    [ngModel]="summary()"
+                    (ngModelChange)="summary.set($event)"
+                  ></textarea>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Skills Worked</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. sit, stay, recall, loose-leash walking"
+                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D7377]/30 focus:border-[#0D7377]"
+                    [ngModel]="skillsWorked()"
+                    (ngModelChange)="onSkillsChange($event)"
+                  />
+                  @if (skillTags().length > 0) {
+                    <div class="flex flex-wrap gap-2 mt-2">
+                      @for (tag of skillTags(); track tag) {
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#0D7377]/10 text-[#0D7377]">
+                          {{ tag }}
+                        </span>
+                      }
+                    </div>
+                  }
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Behavior Notes</label>
+                  <textarea
+                    rows="3"
+                    placeholder="Note any behavioral observations..."
+                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D7377]/30 focus:border-[#0D7377] resize-none"
+                    [ngModel]="behaviorNotes()"
+                    (ngModelChange)="behaviorNotes.set($event)"
+                  ></textarea>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Homework Assigned</label>
+                  <textarea
+                    rows="3"
+                    placeholder="Describe exercises or activities for the client to practice..."
+                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D7377]/30 focus:border-[#0D7377] resize-none"
+                    [ngModel]="homework()"
+                    (ngModelChange)="homework.set($event)"
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="p-6 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                (click)="resetForm()"
+                class="px-5 py-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+              >Cancel</button>
+              <button
+                type="button"
+                (click)="saveLog()"
+                [disabled]="!summary()"
+                class="px-5 py-2.5 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                [class]="summary() ? 'bg-[#F59E0B] hover:bg-[#F59E0B]/90' : 'bg-[#F59E0B]/50'"
+              >Save Log</button>
+            </div>
+
+          </div>
+        }
+
+      </div>
+    </div>
+  `,
 })
-export class TrainingLogCreateComponent {}
+export class TrainingLogCreateComponent {
+  selectedClient = signal('');
+  selectedSession = signal('');
+  sessionDate = signal(new Date().toISOString().split('T')[0]);
+  summary = signal('');
+  skillsWorked = signal('');
+  behaviorNotes = signal('');
+  homework = signal('');
+  rating = signal(0);
+  saved = signal(false);
+
+  skillTags = signal<string[]>([]);
+
+  onSkillsChange(value: string) {
+    this.skillsWorked.set(value);
+    if (!value.trim()) {
+      this.skillTags.set([]);
+      return;
+    }
+    this.skillTags.set(
+      value.split(',').map(s => s.trim()).filter(s => s.length > 0)
+    );
+  }
+
+  saveLog() {
+    if (!this.summary()) return;
+    this.saved.set(true);
+  }
+
+  resetForm() {
+    this.selectedClient.set('');
+    this.selectedSession.set('');
+    this.sessionDate.set(new Date().toISOString().split('T')[0]);
+    this.summary.set('');
+    this.skillsWorked.set('');
+    this.behaviorNotes.set('');
+    this.homework.set('');
+    this.rating.set(0);
+    this.skillTags.set([]);
+    this.saved.set(false);
+  }
+}

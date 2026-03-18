@@ -11,8 +11,8 @@ export class ServiceTypeService {
   constructor(private http: HttpClient) {}
 
   getServices(category?: ServiceCategory): Observable<ServiceType[]> {
-    const params = category ? { category } : {};
-    return this.http.get<ServiceType[]>(this.apiUrl, { params });
+    const options = category ? { params: { category } } : {};
+    return this.http.get<ServiceType[]>(this.apiUrl, options);
   }
 
   getService(serviceId: string): Observable<ServiceType> {

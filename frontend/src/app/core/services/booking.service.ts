@@ -32,11 +32,11 @@ export class BookingService {
   }
 
   cancelBooking(bookingId: string, reason?: string): Observable<Booking> {
-    const params = reason ? { reason } : {};
+    const options = reason ? { params: { reason } } : {};
     return this.http.post<Booking>(
       `${this.bookingsUrl}/${bookingId}/cancel`,
       null,
-      { params }
+      options
     );
   }
 
