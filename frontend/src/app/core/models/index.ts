@@ -7,6 +7,7 @@ export * from './payment.model';
 export * from './notification.model';
 export * from './review.model';
 export * from './training-log.model';
+export * from './board-train.model';
 
 export interface PageResponse<T> {
   content: T[];

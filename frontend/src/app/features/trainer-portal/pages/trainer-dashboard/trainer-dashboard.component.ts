@@ -1,10 +1,13 @@
-import { Component } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { Component, OnInit, signal, inject } from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common';
+import { TrainingService } from '../../../../core/services/training.service';
+import { BoardTrainService } from '../../../../core/services/board-train.service';
+import { TrainingLog, BoardTrainProgram } from '../../../../core/models';
 
 @Component({
   selector: 'app-trainer-dashboard',
   standalone: true,
-  imports: [DatePipe],
+  imports: [CommonModule, DatePipe],
   template: `
     <div class="min-h-screen bg-slate-100">
       <div class="max-w-6xl mx-auto py-10 px-6">
@@ -25,8 +28,8 @@ import { DatePipe } from '@angular/common';
                 </svg>
               </div>
               <div>
-                <p class="text-sm text-slate-500">Sessions This Week</p>
-                <p class="text-2xl font-bold text-slate-800">8</p>
+                <p class="text-sm text-slate-500">Training Logs</p>
+                <p class="text-2xl font-bold text-slate-800">{{ recentLogs().length }}</p>
               </div>
             </div>
           </div>
@@ -38,8 +41,8 @@ import { DatePipe } from '@angular/common';
                 </svg>
               </div>
               <div>
-                <p class="text-sm text-slate-500">Clients Served</p>
-                <p class="text-2xl font-bold text-slate-800">12</p>
+                <p class="text-sm text-slate-500">Board & Train Programs</p>
+                <p class="text-2xl font-bold text-slate-800">{{ activePrograms().length }}</p>
               </div>
             </div>
           </div>
@@ -51,14 +54,14 @@ import { DatePipe } from '@angular/common';
                 </svg>
               </div>
               <div>
-                <p class="text-sm text-slate-500">Training Logs Due</p>
-                <p class="text-2xl font-bold text-slate-800">3</p>
+                <p class="text-sm text-slate-500">In-Progress Programs</p>
+                <p class="text-2xl font-bold text-slate-800">{{ inProgressCount() }}</p>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Today's Schedule -->
+        <!-- Today's Schedule (mock data - requires scheduling service) -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-10">
           <h2 class="text-xl font-semibold text-slate-800 mb-4">Today's Schedule</h2>
           <div class="space-y-4">
@@ -87,35 +90,54 @@ import { DatePipe } from '@angular/common';
         <!-- Recent Training Logs -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <h2 class="text-xl font-semibold text-slate-800 mb-4">Recent Training Logs</h2>
-          <div class="divide-y divide-slate-100">
-            @for (log of recentLogs; track log.date) {
-              <div class="py-3 flex items-center justify-between">
-                <div>
-                  <p class="font-medium text-slate-800">{{ log.dogName }} &mdash; {{ log.service }}</p>
-                  <p class="text-sm text-slate-500">{{ log.summary }}</p>
-                </div>
-                <div class="text-right">
-                  <span class="text-sm text-slate-400">{{ log.date }}</span>
-                  <div class="flex items-center gap-0.5 justify-end mt-1">
-                    @for (star of [1,2,3,4,5]; track star) {
-                      <svg class="w-4 h-4" [class]="star <= log.rating ? 'text-[#F59E0B]' : 'text-slate-200'" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
+          @if (logsLoading()) {
+            <div class="flex items-center justify-center py-8">
+              <div class="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-[#0D7377]"></div>
+              <span class="ml-3 text-slate-500 text-sm">Loading logs...</span>
+            </div>
+          } @else if (recentLogs().length === 0) {
+            <p class="text-slate-500 text-center py-6">No training logs recorded yet.</p>
+          } @else {
+            <div class="divide-y divide-slate-100">
+              @for (log of recentLogs().slice(0, 5); track log.id) {
+                <div class="py-3 flex items-center justify-between">
+                  <div>
+                    <p class="font-medium text-slate-800">{{ log.summary }}</p>
+                    <p class="text-sm text-slate-500">{{ log.skillsWorked?.join(', ') }}</p>
+                  </div>
+                  <div class="text-right">
+                    <span class="text-sm text-slate-400">{{ log.logDate }}</span>
+                    @if (log.rating) {
+                      <div class="flex items-center gap-0.5 justify-end mt-1">
+                        @for (star of [1,2,3,4,5]; track star) {
+                          <svg class="w-4 h-4" [class]="star <= (log.rating ?? 0) ? 'text-[#F59E0B]' : 'text-slate-200'" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        }
+                      </div>
                     }
                   </div>
                 </div>
-              </div>
-            }
-          </div>
+              }
+            </div>
+          }
         </div>
 
       </div>
     </div>
   `,
 })
-export class TrainerDashboardComponent {
-  today = new Date();
+export class TrainerDashboardComponent implements OnInit {
+  private trainingService = inject(TrainingService);
+  private boardTrainService = inject(BoardTrainService);
 
+  today = new Date();
+  logsLoading = signal(false);
+  recentLogs = signal<TrainingLog[]>([]);
+  activePrograms = signal<BoardTrainProgram[]>([]);
+  inProgressCount = signal(0);
+
+  // Mock schedule data - requires scheduling service integration
   todaySessions = [
     {
       time: '9:00 AM',
@@ -143,34 +165,35 @@ export class TrainerDashboardComponent {
     },
   ];
 
-  recentLogs = [
-    {
-      dogName: 'Luna',
-      service: 'Basic Obedience',
-      summary: 'Good progress on sit-stay. Working on recall next session.',
-      date: 'Mar 16, 2026',
-      rating: 4,
-    },
-    {
-      dogName: 'Rocky',
-      service: 'Leash Reactivity',
-      summary: 'Reduced lunging distance. Continue desensitization exercises.',
-      date: 'Mar 15, 2026',
-      rating: 3,
-    },
-    {
-      dogName: 'Bella',
-      service: 'Advanced Agility',
-      summary: 'Nailed weave poles. Ready for competition prep.',
-      date: 'Mar 14, 2026',
-      rating: 5,
-    },
-    {
-      dogName: 'Max',
-      service: 'Puppy Socialization',
-      summary: 'Much more confident around other dogs. Great improvement.',
-      date: 'Mar 13, 2026',
-      rating: 4,
-    },
-  ];
+  ngOnInit(): void {
+    this.loadTrainerLogs();
+    this.loadBoardTrainPrograms();
+  }
+
+  private loadTrainerLogs(): void {
+    this.logsLoading.set(true);
+    this.trainingService.getTrainerLogs().subscribe({
+      next: (logs) => {
+        this.recentLogs.set(logs);
+        this.logsLoading.set(false);
+      },
+      error: () => {
+        this.logsLoading.set(false);
+      },
+    });
+  }
+
+  private loadBoardTrainPrograms(): void {
+    this.boardTrainService.getTrainerPrograms().subscribe({
+      next: (programs) => {
+        this.activePrograms.set(programs);
+        this.inProgressCount.set(
+          programs.filter(p => p.status === 'IN_PROGRESS').length
+        );
+      },
+      error: () => {
+        // Silently handle - board-train may not be available yet
+      },
+    });
+  }
 }

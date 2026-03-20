@@ -7,6 +7,7 @@ import { TrainerService } from '../../../../core/services/trainer.service';
 import { DogService } from '../../../../core/services/dog.service';
 import { SchedulingService } from '../../../../core/services/scheduling.service';
 import { BookingService } from '../../../../core/services/booking.service';
+import { PaymentService } from '../../../../core/services/payment.service';
 import {
   ServiceType,
   TrainerProfile,
@@ -489,6 +490,7 @@ export class BookSessionComponent implements OnInit {
   private dogService = inject(DogService);
   private schedulingService = inject(SchedulingService);
   private bookingService = inject(BookingService);
+  private paymentService = inject(PaymentService);
   private router = inject(Router);
 
   steps = [
@@ -714,9 +716,19 @@ export class BookSessionComponent implements OnInit {
     this.schedulingService.createSession(sessionRequest).subscribe({
       next: (session) => {
         this.bookingService.createBooking({ sessionId: session.id, dogId: dog.id }).subscribe({
-          next: () => {
-            this.bookingConfirmed.set(true);
-            this.submittingBooking.set(false);
+          next: (booking) => {
+            // Booking created — now redirect to Stripe Checkout for payment
+            this.paymentService.createBookingCheckout(booking.id).subscribe({
+              next: (checkout) => {
+                window.location.href = checkout.checkoutUrl;
+              },
+              error: (err) => {
+                this.bookingError.set(
+                  err?.error?.message || 'Booking created but payment initiation failed. Please go to your bookings to retry payment.'
+                );
+                this.submittingBooking.set(false);
+              },
+            });
           },
           error: (err) => {
             this.bookingError.set(err?.error?.message || 'Failed to create booking. Please try again.');

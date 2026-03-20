@@ -1,5 +1,9 @@
 import { Component, signal, computed } from '@angular/core';
 
+// TODO: Replace mock client data with real API calls once a dedicated
+// trainer-clients endpoint is available (e.g., TrainerService.getMyClients()).
+// The current mock data is a placeholder so the page compiles and renders.
+
 interface ClientCard {
   clientName: string;
   dogName: string;

@@ -25,11 +25,12 @@ import { RouterLink } from '@angular/router';
       </div>
 
       <!-- Heading -->
-      <h1 class="text-3xl font-bold text-slate-800 mb-3">Booking Cancelled</h1>
+      <h1 class="text-3xl font-bold text-slate-800 mb-3">Payment Not Completed</h1>
 
       <!-- Message -->
       <p class="text-lg text-slate-500 mb-10 max-w-md mx-auto">
-        Your booking process was cancelled. No charges were made.
+        Your payment was not completed and no charges were made.
+        Your booking is still pending &mdash; you can try again whenever you're ready.
       </p>
 
       <!-- Action Buttons -->
@@ -42,9 +43,9 @@ import { RouterLink } from '@angular/router';
         </a>
         <a
           routerLink="/"
-          class="text-slate-500 hover:text-slate-700 font-medium transition-colors"
+          class="w-full sm:w-auto px-8 py-3 border-2 border-slate-300 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 transition-colors text-center"
         >
-          Back to Home
+          Go Home
         </a>
       </div>
     </div>

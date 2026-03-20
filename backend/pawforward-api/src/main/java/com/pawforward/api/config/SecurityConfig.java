@@ -54,6 +54,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         // Stripe webhook
                         .requestMatchers("/api/v1/payments/webhook").permitAll()
+                        // Public packages listing
+                        .requestMatchers(HttpMethod.GET, "/api/v1/payments/packages").permitAll()
                         // Public read-only endpoints
                         .requestMatchers(HttpMethod.GET, "/api/v1/services/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/trainers/**").permitAll()

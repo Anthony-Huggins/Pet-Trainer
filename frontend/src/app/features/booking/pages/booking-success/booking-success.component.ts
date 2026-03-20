@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, OnInit, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-booking-success',
@@ -33,9 +33,18 @@ import { RouterLink } from '@angular/router';
       <h1 class="text-3xl font-bold text-slate-800 mb-3">Booking Confirmed!</h1>
 
       <!-- Summary -->
-      <p class="text-lg text-slate-500 mb-10 max-w-md mx-auto">
-        Your training session has been booked successfully. You'll receive a confirmation email shortly.
+      <p class="text-lg text-slate-500 mb-4 max-w-md mx-auto">
+        Your training session has been booked and payment was processed successfully.
+        You'll receive a confirmation email shortly.
       </p>
+
+      @if (sessionId()) {
+        <p class="text-sm text-slate-400 mb-10">
+          Payment reference: <span class="font-mono">{{ sessionId() }}</span>
+        </p>
+      } @else {
+        <div class="mb-10"></div>
+      }
 
       <!-- Action Buttons -->
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -46,16 +55,16 @@ import { RouterLink } from '@angular/router';
           View My Bookings
         </a>
         <a
-          routerLink="/book"
+          routerLink="/dashboard/payments"
           class="w-full sm:w-auto px-8 py-3 border-2 border-[#0D7377] text-[#0D7377] font-semibold rounded-xl hover:bg-teal-50 transition-colors text-center"
         >
-          Book Another Session
+          Payment History
         </a>
         <a
-          routerLink="/"
+          routerLink="/dashboard"
           class="text-slate-500 hover:text-slate-700 font-medium transition-colors"
         >
-          Back to Home
+          Go to Dashboard
         </a>
       </div>
     </div>
@@ -66,4 +75,15 @@ import { RouterLink } from '@angular/router';
     }
   `],
 })
-export class BookingSuccessComponent {}
+export class BookingSuccessComponent implements OnInit {
+  sessionId = signal<string | null>(null);
+
+  constructor(private route: ActivatedRoute) {}
+
+  ngOnInit(): void {
+    const sid = this.route.snapshot.queryParamMap.get('session_id');
+    if (sid) {
+      this.sessionId.set(sid);
+    }
+  }
+}

@@ -37,3 +37,29 @@ export interface TrainingMedia {
   caption?: string;
   createdAt: string;
 }
+
+export interface TrainingGoalRequest {
+  dogId: string;
+  title: string;
+  description?: string;
+  targetDate?: string;
+  status?: string;
+  progressPercent?: number;
+}
+
+export interface TrainingLogRequest {
+  dogId: string;
+  sessionId?: string;
+  logDate: string;
+  summary: string;
+  skillsWorked: string[];
+  behaviorNotes?: string;
+  homework?: string;
+  rating?: number;
+}
+
+export interface DogProgressResponse {
+  goals: TrainingGoal[];
+  recentLogs: TrainingLog[];
+  totalSessions: number;
+}

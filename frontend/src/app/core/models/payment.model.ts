@@ -44,3 +44,8 @@ export interface ClientPackage {
   status: string;
   packageName?: string;
 }
+
+export interface CheckoutResponse {
+  checkoutUrl: string;
+  sessionId: string;
+}

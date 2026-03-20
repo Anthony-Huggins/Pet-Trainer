@@ -1,10 +1,15 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal, inject, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { DogService } from '../../../../core/services/dog.service';
+import { TrainingService } from '../../../../core/services/training.service';
+import { Dog, TrainingLogRequest } from '../../../../core/models';
 
 @Component({
   selector: 'app-training-log-create',
   standalone: true,
-  imports: [FormsModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="min-h-screen bg-slate-100">
       <div class="max-w-3xl mx-auto py-10 px-6">
@@ -28,6 +33,16 @@ import { FormsModule } from '@angular/forms';
           <!-- Form -->
           <h1 class="text-3xl font-bold text-slate-800 mb-8">Create Training Log</h1>
 
+          <!-- Error Banner -->
+          @if (errorMessage()) {
+            <div class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 flex items-center gap-3">
+              <svg class="w-5 h-5 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p class="text-sm text-red-600">{{ errorMessage() }}</p>
+            </div>
+          }
+
           <div class="bg-white rounded-xl shadow-sm border border-slate-200 divide-y divide-slate-100">
 
             <!-- Session Details Section -->
@@ -35,33 +50,21 @@ import { FormsModule } from '@angular/forms';
               <h2 class="text-lg font-semibold text-slate-800 mb-4">Session Details</h2>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Client / Dog</label>
-                  <select
-                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0D7377]/30 focus:border-[#0D7377]"
-                    [ngModel]="selectedClient()"
-                    (ngModelChange)="selectedClient.set($event)"
-                  >
-                    <option value="">Select a client...</option>
-                    <option value="sarah-luna">Sarah Johnson - Luna (Golden Retriever)</option>
-                    <option value="david-max">David Chen - Max (French Bulldog)</option>
-                    <option value="emily-bella">Emily Rodriguez - Bella (Border Collie)</option>
-                    <option value="michael-rocky">Michael Park - Rocky (German Shepherd)</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Session</label>
-                  <select
-                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0D7377]/30 focus:border-[#0D7377]"
-                    [ngModel]="selectedSession()"
-                    (ngModelChange)="selectedSession.set($event)"
-                  >
-                    <option value="">Select a session...</option>
-                    <option value="basic-obedience">Basic Obedience</option>
-                    <option value="puppy-socialization">Puppy Socialization</option>
-                    <option value="advanced-agility">Advanced Agility</option>
-                    <option value="leash-reactivity">Leash Reactivity</option>
-                    <option value="board-and-train">Board & Train</option>
-                  </select>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Dog <span class="text-[#F87171]">*</span></label>
+                  @if (dogsLoading()) {
+                    <div class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-400">Loading dogs...</div>
+                  } @else {
+                    <select
+                      class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0D7377]/30 focus:border-[#0D7377]"
+                      [ngModel]="selectedDogId()"
+                      (ngModelChange)="selectedDogId.set($event)"
+                    >
+                      <option value="">Select a dog...</option>
+                      @for (dog of dogs(); track dog.id) {
+                        <option [value]="dog.id">{{ dog.name }} ({{ dog.breed }})</option>
+                      }
+                    </select>
+                  }
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-slate-700 mb-1">Date</label>
@@ -72,7 +75,7 @@ import { FormsModule } from '@angular/forms';
                     (ngModelChange)="sessionDate.set($event)"
                   />
                 </div>
-                <div>
+                <div class="sm:col-span-2">
                   <label class="block text-sm font-medium text-slate-700 mb-1">Session Rating</label>
                   <div class="flex items-center gap-1 mt-1">
                     @for (star of [1,2,3,4,5]; track star) {
@@ -164,10 +167,19 @@ import { FormsModule } from '@angular/forms';
               <button
                 type="button"
                 (click)="saveLog()"
-                [disabled]="!summary()"
+                [disabled]="!canSubmit() || submitting()"
                 class="px-5 py-2.5 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                [class]="summary() ? 'bg-[#F59E0B] hover:bg-[#F59E0B]/90' : 'bg-[#F59E0B]/50'"
-              >Save Log</button>
+                [class]="canSubmit() && !submitting() ? 'bg-[#F59E0B] hover:bg-[#F59E0B]/90' : 'bg-[#F59E0B]/50'"
+              >
+                @if (submitting()) {
+                  <span class="flex items-center gap-2">
+                    <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                    Saving...
+                  </span>
+                } @else {
+                  Save Log
+                }
+              </button>
             </div>
 
           </div>
@@ -177,9 +189,14 @@ import { FormsModule } from '@angular/forms';
     </div>
   `,
 })
-export class TrainingLogCreateComponent {
-  selectedClient = signal('');
-  selectedSession = signal('');
+export class TrainingLogCreateComponent implements OnInit {
+  private dogService = inject(DogService);
+  private trainingService = inject(TrainingService);
+  private router = inject(Router);
+
+  dogs = signal<Dog[]>([]);
+  dogsLoading = signal(false);
+  selectedDogId = signal('');
   sessionDate = signal(new Date().toISOString().split('T')[0]);
   summary = signal('');
   skillsWorked = signal('');
@@ -187,28 +204,69 @@ export class TrainingLogCreateComponent {
   homework = signal('');
   rating = signal(0);
   saved = signal(false);
+  submitting = signal(false);
+  errorMessage = signal('');
 
   skillTags = signal<string[]>([]);
+
+  canSubmit = computed(() => !!this.summary() && !!this.selectedDogId());
+
+  ngOnInit(): void {
+    this.dogsLoading.set(true);
+    this.dogService.getMyDogs().subscribe({
+      next: (dogs) => {
+        this.dogs.set(dogs);
+        this.dogsLoading.set(false);
+      },
+      error: () => {
+        this.dogsLoading.set(false);
+      },
+    });
+  }
 
   onSkillsChange(value: string) {
     this.skillsWorked.set(value);
     if (!value.trim()) {
       this.skillTags.set([]);
-      return;
+    } else {
+      this.skillTags.set(
+        value.split(',').map(s => s.trim()).filter(s => s.length > 0)
+      );
     }
-    this.skillTags.set(
-      value.split(',').map(s => s.trim()).filter(s => s.length > 0)
-    );
   }
 
   saveLog() {
-    if (!this.summary()) return;
-    this.saved.set(true);
+    if (!this.summary() || !this.selectedDogId()) return;
+
+    this.submitting.set(true);
+    this.errorMessage.set('');
+
+    const request: TrainingLogRequest = {
+      dogId: this.selectedDogId(),
+      logDate: this.sessionDate(),
+      summary: this.summary(),
+      skillsWorked: this.skillTags(),
+      behaviorNotes: this.behaviorNotes() || undefined,
+      homework: this.homework() || undefined,
+      rating: this.rating() > 0 ? this.rating() : undefined,
+    };
+
+    this.trainingService.createLog(request).subscribe({
+      next: () => {
+        this.submitting.set(false);
+        this.saved.set(true);
+      },
+      error: (err) => {
+        this.submitting.set(false);
+        this.errorMessage.set(
+          err?.error?.message || 'Failed to save training log. Please try again.'
+        );
+      },
+    });
   }
 
   resetForm() {
-    this.selectedClient.set('');
-    this.selectedSession.set('');
+    this.selectedDogId.set('');
     this.sessionDate.set(new Date().toISOString().split('T')[0]);
     this.summary.set('');
     this.skillsWorked.set('');
@@ -217,5 +275,7 @@ export class TrainingLogCreateComponent {
     this.rating.set(0);
     this.skillTags.set([]);
     this.saved.set(false);
+    this.submitting.set(false);
+    this.errorMessage.set('');
   }
 }
