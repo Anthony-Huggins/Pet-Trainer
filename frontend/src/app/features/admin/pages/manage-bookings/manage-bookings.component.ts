@@ -1,8 +1,12 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { AdminService } from '../../../../core/services/admin.service';
+import { Booking, BookingStatus } from '../../../../core/models';
 
 @Component({
   selector: 'app-manage-bookings',
   standalone: true,
+  imports: [DatePipe],
   template: `
     <div class="max-w-7xl mx-auto py-10 px-6">
       <div>
@@ -12,105 +16,157 @@ import { Component, signal, computed } from '@angular/core';
 
       <!-- Filters -->
       <div class="flex flex-col sm:flex-row gap-4 mt-6">
-        <input type="date" class="px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0D7377]/30 focus:border-[#0D7377]"
-               [value]="dateFrom()" (change)="dateFrom.set($any($event.target).value)" />
-        <input type="date" class="px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0D7377]/30 focus:border-[#0D7377]"
-               [value]="dateTo()" (change)="dateTo.set($any($event.target).value)" />
+        <input type="text" placeholder="Search by client or dog name..."
+               class="flex-1 px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0D7377]/30 focus:border-[#0D7377]"
+               [value]="searchQuery()"
+               (input)="searchQuery.set($any($event.target).value)" />
         <select class="px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0D7377]/30 focus:border-[#0D7377] bg-white"
-                [value]="trainerFilter()" (change)="trainerFilter.set($any($event.target).value)">
-          <option value="All">All Trainers</option>
-          <option value="Dr. Emily Chen">Dr. Emily Chen</option>
-          <option value="Marcus Rivera">Marcus Rivera</option>
-        </select>
-        <select class="px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0D7377]/30 focus:border-[#0D7377] bg-white"
-                [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)">
+                [value]="statusFilter()"
+                (change)="onStatusFilterChange($any($event.target).value)">
           <option value="All">All Statuses</option>
-          <option value="Confirmed">Confirmed</option>
-          <option value="Pending">Pending</option>
-          <option value="Completed">Completed</option>
-          <option value="Cancelled">Cancelled</option>
+          <option value="CONFIRMED">Confirmed</option>
+          <option value="WAITLISTED">Waitlisted</option>
+          <option value="COMPLETED">Completed</option>
+          <option value="CANCELLED">Cancelled</option>
+          <option value="NO_SHOW">No Show</option>
         </select>
       </div>
 
-      <!-- Table -->
-      <div class="mt-6 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="text-left px-6 py-3 font-semibold text-slate-600">Date</th>
-                <th class="text-left px-6 py-3 font-semibold text-slate-600">Time</th>
-                <th class="text-left px-6 py-3 font-semibold text-slate-600">Client</th>
-                <th class="text-left px-6 py-3 font-semibold text-slate-600">Dog</th>
-                <th class="text-left px-6 py-3 font-semibold text-slate-600">Trainer</th>
-                <th class="text-left px-6 py-3 font-semibold text-slate-600">Service</th>
-                <th class="text-left px-6 py-3 font-semibold text-slate-600">Status</th>
-                <th class="text-right px-6 py-3 font-semibold text-slate-600">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (b of filteredBookings(); track b.client + b.date) {
-                <tr class="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-                  <td class="px-6 py-4 text-slate-700">{{ b.date }}</td>
-                  <td class="px-6 py-4 text-slate-600">{{ b.time }}</td>
-                  <td class="px-6 py-4 font-medium text-slate-800">{{ b.client }}</td>
-                  <td class="px-6 py-4 text-slate-600">{{ b.dog }}</td>
-                  <td class="px-6 py-4 text-slate-600">{{ b.trainer }}</td>
-                  <td class="px-6 py-4 text-slate-600">{{ b.service }}</td>
-                  <td class="px-6 py-4">
-                    <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium"
-                          [class]="statusBadge(b.status)">
-                      {{ b.status }}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 text-right">
-                    <button class="text-[#0D7377] hover:text-teal-800 font-medium text-xs mr-2">View</button>
-                    @if (b.status === 'Confirmed' || b.status === 'Pending') {
-                      <button class="text-[#F87171] hover:text-red-600 font-medium text-xs mr-2">Cancel</button>
-                    }
-                    @if (b.status === 'Confirmed') {
-                      <button class="text-[#10B981] hover:text-emerald-700 font-medium text-xs">Complete</button>
-                    }
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
+      @if (loading()) {
+        <div class="flex items-center justify-center py-20">
+          <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-[#0D7377]"></div>
         </div>
-      </div>
+      } @else if (error()) {
+        <div class="mt-8 bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+          <p class="text-red-600 font-medium">Failed to load bookings</p>
+          <p class="text-red-400 text-sm mt-1">{{ error() }}</p>
+          <button (click)="loadBookings()" class="mt-3 px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors">
+            Retry
+          </button>
+        </div>
+      } @else {
+        <!-- Table -->
+        <div class="mt-6 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-200">
+                  <th class="text-left px-6 py-3 font-semibold text-slate-600">Date</th>
+                  <th class="text-left px-6 py-3 font-semibold text-slate-600">Time</th>
+                  <th class="text-left px-6 py-3 font-semibold text-slate-600">Client</th>
+                  <th class="text-left px-6 py-3 font-semibold text-slate-600">Dog</th>
+                  <th class="text-left px-6 py-3 font-semibold text-slate-600">Trainer</th>
+                  <th class="text-left px-6 py-3 font-semibold text-slate-600">Service</th>
+                  <th class="text-left px-6 py-3 font-semibold text-slate-600">Status</th>
+                  <th class="text-right px-6 py-3 font-semibold text-slate-600">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (b of filteredBookings(); track b.id) {
+                  <tr class="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                    <td class="px-6 py-4 text-slate-700">{{ b.session?.sessionDate | date:'mediumDate' }}</td>
+                    <td class="px-6 py-4 text-slate-600">{{ b.session?.startTime }} - {{ b.session?.endTime }}</td>
+                    <td class="px-6 py-4 font-medium text-slate-800">{{ b.clientName }}</td>
+                    <td class="px-6 py-4 text-slate-600">{{ b.dogName }}</td>
+                    <td class="px-6 py-4 text-slate-600">{{ b.session?.trainerName }}</td>
+                    <td class="px-6 py-4 text-slate-600">{{ b.session?.serviceTypeName }}</td>
+                    <td class="px-6 py-4">
+                      <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium"
+                            [class]="statusBadge(b.status)">
+                        {{ b.status }}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                      @if (b.status === 'CONFIRMED' || b.status === 'WAITLISTED') {
+                        <button (click)="updateStatus(b, 'CANCELLED')"
+                                class="text-[#F87171] hover:text-red-600 font-medium text-xs mr-2"
+                                [disabled]="updating()">Cancel</button>
+                      }
+                      @if (b.status === 'CONFIRMED') {
+                        <button (click)="updateStatus(b, 'COMPLETED')"
+                                class="text-[#10B981] hover:text-emerald-700 font-medium text-xs"
+                                [disabled]="updating()">Complete</button>
+                      }
+                    </td>
+                  </tr>
+                }
+                @if (filteredBookings().length === 0) {
+                  <tr>
+                    <td colspan="8" class="px-6 py-12 text-center text-slate-400">No bookings found</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
     </div>
   `,
 })
-export class ManageBookingsComponent {
-  dateFrom = signal('');
-  dateTo = signal('');
-  trainerFilter = signal('All');
-  statusFilter = signal('All');
+export class ManageBookingsComponent implements OnInit {
+  private adminService = inject(AdminService);
 
-  bookings = signal([
-    { date: 'Mar 17, 2026', time: '9:00 AM', client: 'Sarah Mitchell', dog: 'Buddy', trainer: 'Dr. Emily Chen', service: 'Private Training', status: 'Confirmed' },
-    { date: 'Mar 17, 2026', time: '11:00 AM', client: 'James Kelly', dog: 'Rex', trainer: 'Marcus Rivera', service: 'Advanced Agility', status: 'Confirmed' },
-    { date: 'Mar 18, 2026', time: '2:00 PM', client: 'Lisa Park', dog: 'Coco', trainer: 'Dr. Emily Chen', service: 'Group Obedience', status: 'Pending' },
-    { date: 'Mar 15, 2026', time: '10:00 AM', client: 'Tom Watson', dog: 'Duke', trainer: 'Marcus Rivera', service: 'Private Training', status: 'Completed' },
-    { date: 'Mar 14, 2026', time: '3:00 PM', client: 'Mike Davidson', dog: 'Luna', trainer: 'Dr. Emily Chen', service: 'Puppy Socialization', status: 'Cancelled' },
-  ]);
+  loading = signal(true);
+  updating = signal(false);
+  error = signal<string | null>(null);
+  searchQuery = signal('');
+  statusFilter = signal('All');
+  bookings = signal<Booking[]>([]);
 
   filteredBookings = computed(() => {
-    const trainer = this.trainerFilter();
+    const q = this.searchQuery().toLowerCase();
     const status = this.statusFilter();
     return this.bookings().filter(b => {
-      const matchesTrainer = trainer === 'All' || b.trainer === trainer;
+      const matchesSearch = !q || b.clientName?.toLowerCase().includes(q) || b.dogName?.toLowerCase().includes(q);
       const matchesStatus = status === 'All' || b.status === status;
-      return matchesTrainer && matchesStatus;
+      return matchesSearch && matchesStatus;
     });
   });
 
+  ngOnInit() {
+    this.loadBookings();
+  }
+
+  loadBookings() {
+    this.loading.set(true);
+    this.error.set(null);
+    this.adminService.getAllBookings(undefined, 0, 100).subscribe({
+      next: (page) => {
+        this.bookings.set(page.content);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.error.set(err?.error?.message || 'Failed to load bookings');
+        this.loading.set(false);
+      },
+    });
+  }
+
+  onStatusFilterChange(value: string) {
+    this.statusFilter.set(value);
+  }
+
+  updateStatus(booking: Booking, newStatus: string) {
+    this.updating.set(true);
+    this.adminService.updateBookingStatus(booking.id, newStatus as BookingStatus).subscribe({
+      next: (updated) => {
+        this.bookings.update(list => list.map(b => b.id === updated.id ? updated : b));
+        this.updating.set(false);
+      },
+      error: () => {
+        this.updating.set(false);
+        this.loadBookings();
+      },
+    });
+  }
+
   statusBadge(status: string): string {
     switch (status) {
-      case 'Confirmed': return 'bg-blue-100 text-blue-700';
-      case 'Pending': return 'bg-amber-100 text-amber-700';
-      case 'Completed': return 'bg-emerald-100 text-emerald-700';
-      case 'Cancelled': return 'bg-red-100 text-red-700';
+      case 'CONFIRMED': return 'bg-blue-100 text-blue-700';
+      case 'WAITLISTED': return 'bg-amber-100 text-amber-700';
+      case 'COMPLETED': return 'bg-emerald-100 text-emerald-700';
+      case 'CANCELLED': return 'bg-red-100 text-red-700';
+      case 'NO_SHOW': return 'bg-slate-100 text-slate-700';
       default: return 'bg-slate-100 text-slate-700';
     }
   }

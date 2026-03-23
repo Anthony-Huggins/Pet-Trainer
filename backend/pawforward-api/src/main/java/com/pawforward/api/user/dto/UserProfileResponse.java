@@ -12,7 +12,7 @@ import java.util.UUID;
 @Getter
 @AllArgsConstructor
 @Builder
-public class UserResponse {
+public class UserProfileResponse {
 
     private UUID id;
     private String email;
@@ -22,11 +22,10 @@ public class UserResponse {
     private String avatarUrl;
     private UserRole role;
     private boolean emailVerified;
-    private boolean enabled;
     private Instant createdAt;
 
-    public static UserResponse from(User user) {
-        return UserResponse.builder()
+    public static UserProfileResponse from(User user) {
+        return UserProfileResponse.builder()
                 .id(user.getId())
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
@@ -35,7 +34,6 @@ public class UserResponse {
                 .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole())
                 .emailVerified(user.isEmailVerified())
-                .enabled(user.isEnabled())
                 .createdAt(user.getCreatedAt())
                 .build();
     }

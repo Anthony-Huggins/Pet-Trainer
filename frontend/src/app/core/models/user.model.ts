@@ -7,6 +7,7 @@ export interface User {
   avatarUrl?: string;
   role: UserRole;
   emailVerified: boolean;
+  enabled: boolean;
   createdAt: string;
 }
 

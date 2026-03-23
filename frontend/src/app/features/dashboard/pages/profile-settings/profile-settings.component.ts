@@ -1,5 +1,6 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { AuthService } from '../../../../core/services/auth.service';
+import { UserService } from '../../../../core/services/user.service';
 
 @Component({
   selector: 'app-profile-settings',
@@ -38,72 +39,89 @@ import { AuthService } from '../../../../core/services/auth.service';
         </div>
       }
 
+      <!-- Error Message -->
+      @if (errorMessage()) {
+        <div class="mb-6 rounded-lg bg-red-50 border border-red-200 p-4 flex items-center gap-3">
+          <svg class="w-5 h-5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span class="text-red-700 text-sm font-medium">{{ errorMessage() }}</span>
+        </div>
+      }
+
       <!-- Profile Tab -->
       @if (activeTab() === 'profile') {
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
-          <!-- Avatar -->
-          <div class="flex items-center gap-6 mb-8 pb-8 border-b border-slate-100">
-            <div class="w-20 h-20 rounded-full bg-[#0D7377] flex items-center justify-center text-white text-2xl font-bold shrink-0">
-              {{ initials() }}
-            </div>
-            <div>
-              <p class="text-lg font-semibold text-slate-800">{{ user()?.firstName }} {{ user()?.lastName }}</p>
-              <p class="text-sm text-slate-500">{{ user()?.email }}</p>
-            </div>
+        @if (loadingProfile()) {
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
+            <div class="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-[#0D7377]"></div>
+            <p class="text-slate-500 mt-4">Loading profile...</p>
           </div>
+        } @else {
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+            <!-- Avatar -->
+            <div class="flex items-center gap-6 mb-8 pb-8 border-b border-slate-100">
+              <div class="w-20 h-20 rounded-full bg-[#0D7377] flex items-center justify-center text-white text-2xl font-bold shrink-0">
+                {{ initials() }}
+              </div>
+              <div>
+                <p class="text-lg font-semibold text-slate-800">{{ user()?.firstName }} {{ user()?.lastName }}</p>
+                <p class="text-sm text-slate-500">{{ user()?.email }}</p>
+              </div>
+            </div>
 
-          <!-- Profile Form -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1.5">First Name</label>
-              <input
-                type="text"
-                [value]="firstName()"
-                (input)="firstName.set(asInputValue($event))"
-                class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D7377] focus:border-transparent"
-              />
+            <!-- Profile Form -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">First Name</label>
+                <input
+                  type="text"
+                  [value]="firstName()"
+                  (input)="firstName.set(asInputValue($event))"
+                  class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D7377] focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">Last Name</label>
+                <input
+                  type="text"
+                  [value]="lastName()"
+                  (input)="lastName.set(asInputValue($event))"
+                  class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D7377] focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
+                <input
+                  type="email"
+                  [value]="user()?.email ?? ''"
+                  disabled
+                  class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-400 cursor-not-allowed"
+                />
+                <p class="text-xs text-slate-400 mt-1">Email cannot be changed</p>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">Phone</label>
+                <input
+                  type="tel"
+                  [value]="phone()"
+                  (input)="phone.set(asInputValue($event))"
+                  placeholder="(555) 123-4567"
+                  class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D7377] focus:border-transparent"
+                />
+              </div>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1.5">Last Name</label>
-              <input
-                type="text"
-                [value]="lastName()"
-                (input)="lastName.set(asInputValue($event))"
-                class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D7377] focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
-              <input
-                type="email"
-                [value]="user()?.email ?? ''"
-                disabled
-                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-400 cursor-not-allowed"
-              />
-              <p class="text-xs text-slate-400 mt-1">Email cannot be changed</p>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1.5">Phone</label>
-              <input
-                type="tel"
-                [value]="phone()"
-                (input)="phone.set(asInputValue($event))"
-                placeholder="(555) 123-4567"
-                class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D7377] focus:border-transparent"
-              />
-            </div>
-          </div>
 
-          <div class="mt-8 flex justify-end">
-            <button
-              (click)="saveProfile()"
-              [disabled]="saving()"
-              class="px-6 py-2.5 bg-[#F59E0B] hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {{ saving() ? 'Saving...' : 'Save Changes' }}
-            </button>
+            <div class="mt-8 flex justify-end">
+              <button
+                (click)="saveProfile()"
+                [disabled]="saving()"
+                class="px-6 py-2.5 bg-[#F59E0B] hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {{ saving() ? 'Saving...' : 'Save Changes' }}
+              </button>
+            </div>
           </div>
-        </div>
+        }
       }
 
       <!-- Security Tab -->
@@ -180,11 +198,14 @@ import { AuthService } from '../../../../core/services/auth.service';
 })
 export class ProfileSettingsComponent implements OnInit {
   private authService = inject(AuthService);
+  private userService = inject(UserService);
 
   readonly user = this.authService.user;
 
   activeTab = signal<'profile' | 'security'>('profile');
   successMessage = signal('');
+  errorMessage = signal('');
+  loadingProfile = signal(false);
 
   firstName = signal('');
   lastName = signal('');
@@ -217,42 +238,82 @@ export class ProfileSettingsComponent implements OnInit {
   strengthLabels = signal(['Weak', 'Fair', 'Good', 'Strong']);
 
   ngOnInit(): void {
-    const u = this.user();
-    if (u) {
-      this.firstName.set(u.firstName ?? '');
-      this.lastName.set(u.lastName ?? '');
-      this.phone.set(u.phone ?? '');
-    }
+    this.loadProfile();
+  }
+
+  private loadProfile(): void {
+    this.loadingProfile.set(true);
+    this.userService.getProfile().subscribe({
+      next: (profile) => {
+        this.firstName.set(profile.firstName ?? '');
+        this.lastName.set(profile.lastName ?? '');
+        this.phone.set(profile.phone ?? '');
+        this.loadingProfile.set(false);
+      },
+      error: () => {
+        // Fallback to auth user if profile endpoint fails
+        const u = this.user();
+        if (u) {
+          this.firstName.set(u.firstName ?? '');
+          this.lastName.set(u.lastName ?? '');
+          this.phone.set(u.phone ?? '');
+        }
+        this.loadingProfile.set(false);
+      },
+    });
   }
 
   asInputValue(event: Event): string {
     return (event.target as HTMLInputElement).value;
   }
 
+  private clearMessages(): void {
+    this.successMessage.set('');
+    this.errorMessage.set('');
+  }
+
   saveProfile(): void {
     this.saving.set(true);
-    this.successMessage.set('');
+    this.clearMessages();
 
-    // Simulate save -- replace with real HTTP call when endpoint exists
-    setTimeout(() => {
-      this.saving.set(false);
-      this.successMessage.set('Profile updated successfully.');
-      setTimeout(() => this.successMessage.set(''), 4000);
-    }, 600);
+    this.userService.updateProfile({
+      firstName: this.firstName(),
+      lastName: this.lastName(),
+      phone: this.phone(),
+    }).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.successMessage.set('Profile updated successfully.');
+        // Refresh the auth user so the header/avatar updates
+        this.authService.getCurrentUser().subscribe();
+        setTimeout(() => this.successMessage.set(''), 4000);
+      },
+      error: (err) => {
+        this.saving.set(false);
+        this.errorMessage.set(err?.error?.message ?? 'Failed to update profile.');
+        setTimeout(() => this.errorMessage.set(''), 4000);
+      },
+    });
   }
 
   updatePassword(): void {
     this.savingPassword.set(true);
-    this.successMessage.set('');
+    this.clearMessages();
 
-    // Simulate save -- replace with real HTTP call when endpoint exists
-    setTimeout(() => {
-      this.savingPassword.set(false);
-      this.currentPassword.set('');
-      this.newPassword.set('');
-      this.confirmPassword.set('');
-      this.successMessage.set('Password updated successfully.');
-      setTimeout(() => this.successMessage.set(''), 4000);
-    }, 600);
+    this.userService.changePassword(this.currentPassword(), this.newPassword()).subscribe({
+      next: () => {
+        this.savingPassword.set(false);
+        this.currentPassword.set('');
+        this.newPassword.set('');
+        this.confirmPassword.set('');
+        this.successMessage.set('Password updated successfully.');
+        setTimeout(() => this.successMessage.set(''), 4000);
+      },
+      error: (err) => {
+        this.savingPassword.set(false);
+        this.errorMessage.set(err?.error?.message ?? 'Failed to update password.');
+        setTimeout(() => this.errorMessage.set(''), 4000);
+      },
+    });
   }
 }

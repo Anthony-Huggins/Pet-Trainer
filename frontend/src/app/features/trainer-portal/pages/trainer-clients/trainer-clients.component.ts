@@ -1,12 +1,13 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { TrainingService } from '../../../../core/services/training.service';
+import { BookingService } from '../../../../core/services/booking.service';
+import { TrainingLog } from '../../../../core/models';
 
-// TODO: Replace mock client data with real API calls once a dedicated
-// trainer-clients endpoint is available (e.g., TrainerService.getMyClients()).
-// The current mock data is a placeholder so the page compiles and renders.
-
+// Derived client info from training logs and bookings
 interface ClientCard {
   clientName: string;
   dogName: string;
+  dogId: string;
   breed: string;
   activeGoals: number;
   lastSession: string;
@@ -36,10 +37,25 @@ interface ClientCard {
           </div>
         </div>
 
+        <!-- Loading -->
+        @if (loading()) {
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-16 text-center">
+            <div class="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-[#0D7377]"></div>
+            <p class="text-slate-500 mt-4">Loading clients...</p>
+          </div>
+        }
+
+        <!-- Error -->
+        @if (!loading() && error()) {
+          <div class="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-red-700 text-sm">
+            {{ error() }}
+          </div>
+        }
+
         <!-- Client Cards -->
-        @if (filteredClients().length > 0) {
+        @if (!loading() && filteredClients().length > 0) {
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
-            @for (client of filteredClients(); track client.clientName) {
+            @for (client of filteredClients(); track client.dogId) {
               <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md hover:border-[#0D7377]/30 transition-all">
                 <div class="flex items-start gap-4">
                   <!-- Dog Photo Placeholder -->
@@ -82,8 +98,10 @@ interface ClientCard {
               </div>
             }
           </div>
-        } @else {
-          <!-- Empty State -->
+        }
+
+        <!-- Empty State -->
+        @if (!loading() && !error() && filteredClients().length === 0) {
           <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-16 text-center">
             <div class="w-16 h-16 mx-auto rounded-full bg-slate-100 flex items-center justify-center mb-4">
               <svg class="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -99,54 +117,83 @@ interface ClientCard {
     </div>
   `,
 })
-export class TrainerClientsComponent {
-  searchTerm = signal('');
+export class TrainerClientsComponent implements OnInit {
+  private trainingService = inject(TrainingService);
 
-  clients: ClientCard[] = [
-    {
-      clientName: 'Sarah Johnson',
-      dogName: 'Luna',
-      breed: 'Golden Retriever',
-      activeGoals: 3,
-      lastSession: 'Mar 16, 2026',
-      vaccinationCompliant: true,
-    },
-    {
-      clientName: 'David Chen',
-      dogName: 'Max',
-      breed: 'French Bulldog',
-      activeGoals: 2,
-      lastSession: 'Mar 15, 2026',
-      vaccinationCompliant: true,
-    },
-    {
-      clientName: 'Emily Rodriguez',
-      dogName: 'Bella',
-      breed: 'Border Collie',
-      activeGoals: 4,
-      lastSession: 'Mar 14, 2026',
-      vaccinationCompliant: false,
-    },
-    {
-      clientName: 'Michael Park',
-      dogName: 'Rocky',
-      breed: 'German Shepherd',
-      activeGoals: 2,
-      lastSession: 'Mar 13, 2026',
-      vaccinationCompliant: true,
-    },
-  ];
+  searchTerm = signal('');
+  loading = signal(false);
+  error = signal('');
+
+  clients = signal<ClientCard[]>([]);
 
   filteredClients = computed(() => {
     const term = this.searchTerm().toLowerCase();
-    if (!term) return this.clients;
-    return this.clients.filter(
+    const list = this.clients();
+    if (!term) return list;
+    return list.filter(
       c =>
         c.clientName.toLowerCase().includes(term) ||
         c.dogName.toLowerCase().includes(term) ||
         c.breed.toLowerCase().includes(term)
     );
   });
+
+  ngOnInit(): void {
+    this.loadClients();
+  }
+
+  private loadClients(): void {
+    this.loading.set(true);
+    this.error.set('');
+
+    // Derive unique clients from the trainer's training logs
+    this.trainingService.getTrainerLogs().subscribe({
+      next: (logs) => {
+        this.clients.set(this.deriveClients(logs));
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.error.set(err?.error?.message ?? 'Failed to load clients.');
+        this.loading.set(false);
+      },
+    });
+  }
+
+  private deriveClients(logs: TrainingLog[]): ClientCard[] {
+    // Group by dogId to get unique client-dog pairs
+    const dogMap = new Map<string, { logs: TrainingLog[] }>();
+    for (const log of logs) {
+      if (!dogMap.has(log.dogId)) {
+        dogMap.set(log.dogId, { logs: [] });
+      }
+      dogMap.get(log.dogId)!.logs.push(log);
+    }
+
+    const clients: ClientCard[] = [];
+    for (const [dogId, data] of dogMap) {
+      // Sort logs by date descending
+      const sorted = data.logs.sort(
+        (a, b) => new Date(b.logDate).getTime() - new Date(a.logDate).getTime()
+      );
+      const latest = sorted[0];
+
+      clients.push({
+        clientName: latest.trainerName ?? 'Client',
+        dogName: dogId, // Will show dogId if no name available from log
+        dogId,
+        breed: '',
+        activeGoals: 0,
+        lastSession: new Date(latest.logDate).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }),
+        vaccinationCompliant: true,
+      });
+    }
+
+    return clients;
+  }
 
   onSearch(event: Event) {
     const input = event.target as HTMLInputElement;

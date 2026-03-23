@@ -29,7 +29,8 @@
       "Bash(find /c/Users/langn/Skillstorm/Training/projects/PetTraning -type f -name *payment*)",
       "Bash(grep -r stripe /c/Users/langn/Skillstorm/Training/projects/PetTraning/backend --include=*.java)",
       "Bash(mvn compile:*)",
-      "Bash(docker info:*)"
+      "Bash(docker info:*)",
+      "Bash(cmd.exe /c \"start \"\"\"\" \"\"C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe\"\"\")"
     ]
   }
 }

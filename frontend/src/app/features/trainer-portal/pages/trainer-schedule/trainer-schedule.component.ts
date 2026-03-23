@@ -1,5 +1,7 @@
-import { Component, signal, computed } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { Component, inject, signal, computed, OnInit, effect } from '@angular/core';
+import { SchedulingService } from '../../../../core/services/scheduling.service';
+import { TrainerService } from '../../../../core/services/trainer.service';
+import { Session } from '../../../../core/models';
 
 interface ScheduleSession {
   day: number;
@@ -11,7 +13,7 @@ interface ScheduleSession {
 @Component({
   selector: 'app-trainer-schedule',
   standalone: true,
-  imports: [DatePipe],
+  imports: [],
   template: `
     <div class="min-h-screen bg-slate-100">
       <div class="max-w-7xl mx-auto py-10 px-6">
@@ -64,6 +66,23 @@ interface ScheduleSession {
             </svg>
           </button>
         </div>
+
+        <!-- Loading indicator -->
+        @if (loading()) {
+          <div class="mb-4 text-center">
+            <div class="inline-flex items-center gap-2 text-sm text-slate-500">
+              <div class="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-[#0D7377]"></div>
+              Loading sessions...
+            </div>
+          </div>
+        }
+
+        <!-- Error -->
+        @if (error()) {
+          <div class="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-red-700 text-sm">
+            {{ error() }}
+          </div>
+        }
 
         <!-- Legend -->
         <div class="flex items-center gap-6 mb-4">
@@ -121,23 +140,19 @@ interface ScheduleSession {
     </div>
   `,
 })
-export class TrainerScheduleComponent {
+export class TrainerScheduleComponent implements OnInit {
+  private schedulingService = inject(SchedulingService);
+  private trainerService = inject(TrainerService);
+
   viewMode = signal<'week' | 'month'>('week');
   weekOffset = signal(0);
+  loading = signal(false);
+  error = signal('');
+  trainerId = signal<string | null>(null);
 
   hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
 
-  mockSessions: ScheduleSession[] = [
-    { day: 0, startHour: 9, title: 'Basic Obedience - Luna', type: 'private' },
-    { day: 0, startHour: 14, title: 'Agility Group', type: 'group' },
-    { day: 1, startHour: 10, title: 'Board & Train - Rocky', type: 'board' },
-    { day: 1, startHour: 15, title: 'Puppy Class', type: 'group' },
-    { day: 2, startHour: 9, title: 'Leash Reactivity - Max', type: 'private' },
-    { day: 3, startHour: 11, title: 'Advanced Agility Group', type: 'group' },
-    { day: 3, startHour: 14, title: 'Board & Train - Bella', type: 'board' },
-    { day: 4, startHour: 9, title: 'Recall Training - Daisy', type: 'private' },
-    { day: 4, startHour: 13, title: 'Socialization Group', type: 'group' },
-  ];
+  calendarSessions = signal<ScheduleSession[]>([]);
 
   weekStart = computed(() => {
     const today = new Date();
@@ -173,6 +188,84 @@ export class TrainerScheduleComponent {
     return `${start.toLocaleDateString('en-US', opts)} - ${end.toLocaleDateString('en-US', { ...opts, year: 'numeric' })}`;
   });
 
+  // Reload sessions when weekOffset changes
+  private weekWatcher = effect(() => {
+    // Access the signal to subscribe
+    this.weekStart();
+    if (this.trainerId()) {
+      this.loadSessions();
+    }
+  });
+
+  ngOnInit(): void {
+    // First get the trainer's profile to get the trainerId
+    this.trainerService.getMyProfile().subscribe({
+      next: (profile) => {
+        this.trainerId.set(profile.id);
+        this.loadSessions();
+      },
+      error: () => {
+        this.error.set('Could not load trainer profile.');
+      },
+    });
+  }
+
+  private loadSessions(): void {
+    const tid = this.trainerId();
+    if (!tid) return;
+
+    this.loading.set(true);
+    this.error.set('');
+
+    const start = this.weekStart();
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+
+    const fromStr = this.toDateString(start);
+    const toStr = this.toDateString(end);
+
+    this.schedulingService.getSessionsByTrainer(tid, fromStr, toStr).subscribe({
+      next: (sessions) => {
+        this.calendarSessions.set(this.mapSessionsToGrid(sessions, start));
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.error.set(err?.error?.message ?? 'Failed to load sessions.');
+        this.calendarSessions.set([]);
+        this.loading.set(false);
+      },
+    });
+  }
+
+  private mapSessionsToGrid(sessions: Session[], weekStart: Date): ScheduleSession[] {
+    return sessions.map(s => {
+      const sessionDate = new Date(s.sessionDate + 'T00:00:00');
+      const dayDiff = Math.round((sessionDate.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24));
+      const startHour = parseInt(s.startTime.split(':')[0], 10);
+
+      let type: 'private' | 'group' | 'board' = 'private';
+      const name = (s.serviceTypeName ?? '').toLowerCase();
+      if (name.includes('board') || name.includes('train')) {
+        type = 'board';
+      } else if (s.classSeriesId || name.includes('group') || name.includes('class')) {
+        type = 'group';
+      }
+
+      const title = s.serviceTypeName
+        ? `${s.serviceTypeName}${s.notes ? ' - ' + s.notes : ''}`
+        : (s.notes ?? 'Session');
+
+      return { day: dayDiff, startHour, title, type };
+    }).filter(s => s.day >= 0 && s.day <= 6);
+  }
+
+  private toDateString(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
   prevWeek() {
     this.weekOffset.update(v => v - 1);
   }
@@ -191,7 +284,7 @@ export class TrainerScheduleComponent {
   }
 
   getSession(dayIdx: number, hour: number): ScheduleSession | undefined {
-    return this.mockSessions.find(s => s.day === dayIdx && s.startHour === hour);
+    return this.calendarSessions().find(s => s.day === dayIdx && s.startHour === hour);
   }
 
   getSessionBg(type: string): string {

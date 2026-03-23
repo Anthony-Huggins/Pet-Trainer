@@ -8,6 +8,7 @@ export * from './notification.model';
 export * from './review.model';
 export * from './training-log.model';
 export * from './board-train.model';
+export * from './admin.model';
 
 export interface PageResponse<T> {
   content: T[];
