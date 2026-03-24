@@ -30,7 +30,12 @@
       "Bash(grep -r stripe /c/Users/langn/Skillstorm/Training/projects/PetTraning/backend --include=*.java)",
       "Bash(mvn compile:*)",
       "Bash(docker info:*)",
-      "Bash(cmd.exe /c \"start \"\"\"\" \"\"C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe\"\"\")"
+      "Bash(cmd.exe /c \"start \"\"\"\" \"\"C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe\"\"\")",
+      "Bash(find /c/Users/langn/Skillstorm/Training/projects/PetTraning -name *WebSocket* -o -name *websocket*)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -n \"notification\" /c/Users/langn/Skillstorm/Training/projects/PetTraning/backend/pawforward-api/src/main/resources/db/migration/*.sql -i)",
+      "Bash(grep -n \"@Configuration\\\\|@Bean\\\\|WebSocket\\\\|Mail\\\\|@Service\" /c/Users/langn/Skillstorm/Training/projects/PetTraning/backend/pawforward-api/src/main/java/com/pawforward/api/config/*.java)",
+      "Bash(npm install:*)"
     ]
   }
 }

@@ -6,6 +6,8 @@ import com.pawforward.api.booking.dto.ClassEnrollmentRequest;
 import com.pawforward.api.booking.dto.ClassEnrollmentResponse;
 import com.pawforward.api.dog.Dog;
 import com.pawforward.api.dog.DogRepository;
+import com.pawforward.api.notification.NotificationDispatcher;
+import com.pawforward.api.notification.NotificationType;
 import com.pawforward.api.scheduling.ClassSeries;
 import com.pawforward.api.scheduling.ClassSeriesRepository;
 import com.pawforward.api.scheduling.ClassSeriesStatus;
@@ -21,7 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -33,19 +37,22 @@ public class BookingService {
     private final ClassSeriesRepository classSeriesRepository;
     private final DogRepository dogRepository;
     private final UserRepository userRepository;
+    private final NotificationDispatcher notificationDispatcher;
 
     public BookingService(BookingRepository bookingRepository,
                           ClassEnrollmentRepository enrollmentRepository,
                           SessionRepository sessionRepository,
                           ClassSeriesRepository classSeriesRepository,
                           DogRepository dogRepository,
-                          UserRepository userRepository) {
+                          UserRepository userRepository,
+                          NotificationDispatcher notificationDispatcher) {
         this.bookingRepository = bookingRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.sessionRepository = sessionRepository;
         this.classSeriesRepository = classSeriesRepository;
         this.dogRepository = dogRepository;
         this.userRepository = userRepository;
+        this.notificationDispatcher = notificationDispatcher;
     }
 
     // --- Private session bookings ---
@@ -108,6 +115,23 @@ public class BookingService {
                 .build();
 
         booking = bookingRepository.save(booking);
+
+        // Dispatch booking confirmed notification
+        Map<String, Object> data = new HashMap<>();
+        data.put("clientName", client.getFullName());
+        data.put("serviceName", session.getServiceType().getName());
+        data.put("date", session.getSessionDate().toString());
+        data.put("time", session.getStartTime().toString());
+        data.put("bookingId", booking.getId().toString());
+        notificationDispatcher.dispatchNotification(
+                client.getId(),
+                NotificationType.BOOKING_CONFIRMED,
+                "Booking Confirmed",
+                "Your booking for " + session.getServiceType().getName() + " has been confirmed.",
+                data,
+                client.getEmail()
+        );
+
         return BookingResponse.from(booking);
     }
 
@@ -127,6 +151,23 @@ public class BookingService {
         booking.setStatus(BookingStatus.CANCELLED);
         booking.setCancellationReason(reason);
         booking = bookingRepository.save(booking);
+
+        // Dispatch booking cancelled notification
+        User client = booking.getClient();
+        Map<String, Object> data = new HashMap<>();
+        data.put("clientName", client.getFullName());
+        data.put("serviceName", booking.getSession().getServiceType().getName());
+        data.put("reason", reason);
+        data.put("bookingId", booking.getId().toString());
+        notificationDispatcher.dispatchNotification(
+                client.getId(),
+                NotificationType.BOOKING_CANCELLED,
+                "Booking Cancelled",
+                "Your booking for " + booking.getSession().getServiceType().getName() + " has been cancelled.",
+                data,
+                client.getEmail()
+        );
+
         return BookingResponse.from(booking);
     }
 

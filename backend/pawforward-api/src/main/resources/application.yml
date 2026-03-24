@@ -52,6 +52,7 @@ spring:
   mail:
     host: localhost
     port: 1025
+    from: noreply@pawforward.com
 
 logging:
   level:

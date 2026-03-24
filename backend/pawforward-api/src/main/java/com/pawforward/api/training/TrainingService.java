@@ -2,6 +2,8 @@ package com.pawforward.api.training;
 
 import com.pawforward.api.dog.Dog;
 import com.pawforward.api.dog.DogRepository;
+import com.pawforward.api.notification.NotificationDispatcher;
+import com.pawforward.api.notification.NotificationType;
 import com.pawforward.api.scheduling.Session;
 import com.pawforward.api.scheduling.SessionRepository;
 import com.pawforward.api.security.SecurityUtils;
@@ -19,7 +21,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -32,6 +36,7 @@ public class TrainingService {
     private final TrainerProfileRepository trainerProfileRepository;
     private final SessionRepository sessionRepository;
     private final UserRepository userRepository;
+    private final NotificationDispatcher notificationDispatcher;
 
     public TrainingService(TrainingGoalRepository goalRepository,
                            TrainingLogRepository logRepository,
@@ -39,7 +44,8 @@ public class TrainingService {
                            DogRepository dogRepository,
                            TrainerProfileRepository trainerProfileRepository,
                            SessionRepository sessionRepository,
-                           UserRepository userRepository) {
+                           UserRepository userRepository,
+                           NotificationDispatcher notificationDispatcher) {
         this.goalRepository = goalRepository;
         this.logRepository = logRepository;
         this.mediaRepository = mediaRepository;
@@ -47,6 +53,7 @@ public class TrainingService {
         this.trainerProfileRepository = trainerProfileRepository;
         this.sessionRepository = sessionRepository;
         this.userRepository = userRepository;
+        this.notificationDispatcher = notificationDispatcher;
     }
 
     public User getCurrentUser() {
@@ -154,6 +161,23 @@ public class TrainingService {
                 .build();
 
         log = logRepository.save(log);
+
+        // Dispatch training update notification to the dog's owner
+        User owner = dog.getOwner();
+        Map<String, Object> notifData = new HashMap<>();
+        notifData.put("clientName", owner.getFullName());
+        notifData.put("dogName", dog.getName());
+        notifData.put("summary", req.getSummary());
+        notifData.put("logId", log.getId().toString());
+        notificationDispatcher.dispatchNotification(
+                owner.getId(),
+                NotificationType.TRAINING_UPDATE,
+                "Training Update for " + dog.getName(),
+                req.getSummary(),
+                notifData,
+                owner.getEmail()
+        );
+
         return TrainingLogResponse.from(log);
     }
 

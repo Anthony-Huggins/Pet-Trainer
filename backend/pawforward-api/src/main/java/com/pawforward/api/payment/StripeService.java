@@ -3,6 +3,8 @@ package com.pawforward.api.payment;
 import com.pawforward.api.booking.Booking;
 import com.pawforward.api.booking.BookingRepository;
 import com.pawforward.api.booking.BookingStatus;
+import com.pawforward.api.notification.NotificationDispatcher;
+import com.pawforward.api.notification.NotificationType;
 import com.pawforward.api.payment.dto.CheckoutResponse;
 import com.pawforward.api.user.User;
 import com.pawforward.api.user.UserRepository;
@@ -28,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -53,17 +56,20 @@ public class StripeService {
     private final ClientPackageRepository clientPackageRepository;
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
+    private final NotificationDispatcher notificationDispatcher;
 
     public StripeService(PaymentRepository paymentRepository,
                          PackageRepository packageRepository,
                          ClientPackageRepository clientPackageRepository,
                          BookingRepository bookingRepository,
-                         UserRepository userRepository) {
+                         UserRepository userRepository,
+                         NotificationDispatcher notificationDispatcher) {
         this.paymentRepository = paymentRepository;
         this.packageRepository = packageRepository;
         this.clientPackageRepository = clientPackageRepository;
         this.bookingRepository = bookingRepository;
         this.userRepository = userRepository;
+        this.notificationDispatcher = notificationDispatcher;
     }
 
     @PostConstruct
@@ -223,6 +229,21 @@ public class StripeService {
             booking.setStatus(BookingStatus.CONFIRMED);
             bookingRepository.save(booking);
 
+            // Dispatch payment received notification
+            Map<String, Object> notifData = new HashMap<>();
+            notifData.put("clientName", user.getFullName());
+            notifData.put("amount", amount.toPlainString());
+            notifData.put("description", payment.getDescription());
+            notifData.put("bookingId", bookingId.toString());
+            notificationDispatcher.dispatchNotification(
+                    user.getId(),
+                    NotificationType.PAYMENT_RECEIVED,
+                    "Payment Received",
+                    "Your payment of $" + amount.toPlainString() + " has been received.",
+                    notifData,
+                    user.getEmail()
+            );
+
             log.info("Processed booking payment for booking {} by user {}", bookingId, userId);
 
         } else if ("PACKAGE".equals(type)) {
@@ -255,6 +276,21 @@ public class StripeService {
                     .status("ACTIVE")
                     .build();
             clientPackageRepository.save(clientPackage);
+
+            // Dispatch payment received notification
+            Map<String, Object> notifData = new HashMap<>();
+            notifData.put("clientName", user.getFullName());
+            notifData.put("amount", amount.toPlainString());
+            notifData.put("description", payment.getDescription());
+            notifData.put("packageId", packageId.toString());
+            notificationDispatcher.dispatchNotification(
+                    user.getId(),
+                    NotificationType.PAYMENT_RECEIVED,
+                    "Payment Received",
+                    "Your payment of $" + amount.toPlainString() + " for " + trainingPackage.getName() + " has been received.",
+                    notifData,
+                    user.getEmail()
+            );
 
             log.info("Processed package payment for package {} by user {}", packageId, userId);
 

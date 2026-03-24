@@ -9,6 +9,8 @@ import com.pawforward.api.boardtrain.dto.DailyNoteRequest;
 import com.pawforward.api.boardtrain.dto.DailyNoteResponse;
 import com.pawforward.api.dog.Dog;
 import com.pawforward.api.dog.DogRepository;
+import com.pawforward.api.notification.NotificationDispatcher;
+import com.pawforward.api.notification.NotificationType;
 import com.pawforward.api.security.SecurityUtils;
 import com.pawforward.api.service.ServiceType;
 import com.pawforward.api.service.ServiceTypeRepository;
@@ -36,19 +38,22 @@ public class BoardTrainService {
     private final TrainerProfileRepository trainerProfileRepository;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
+    private final NotificationDispatcher notificationDispatcher;
 
     public BoardTrainService(BoardTrainRepository boardTrainRepository,
                              DogRepository dogRepository,
                              ServiceTypeRepository serviceTypeRepository,
                              TrainerProfileRepository trainerProfileRepository,
                              UserRepository userRepository,
-                             ObjectMapper objectMapper) {
+                             ObjectMapper objectMapper,
+                             NotificationDispatcher notificationDispatcher) {
         this.boardTrainRepository = boardTrainRepository;
         this.dogRepository = dogRepository;
         this.serviceTypeRepository = serviceTypeRepository;
         this.trainerProfileRepository = trainerProfileRepository;
         this.userRepository = userRepository;
         this.objectMapper = objectMapper;
+        this.notificationDispatcher = notificationDispatcher;
     }
 
     @Transactional
@@ -162,6 +167,24 @@ public class BoardTrainService {
         }
 
         boardTrainRepository.save(program);
+
+        // Dispatch training update notification to the client
+        User client = program.getClient();
+        Dog dog = program.getDog();
+        Map<String, Object> notifData = new HashMap<>();
+        notifData.put("clientName", client.getFullName());
+        notifData.put("dogName", dog.getName());
+        notifData.put("note", noteRequest.getNote());
+        notifData.put("updateType", "BOARD_TRAIN");
+        notifData.put("programId", programId.toString());
+        notificationDispatcher.dispatchNotification(
+                client.getId(),
+                NotificationType.TRAINING_UPDATE,
+                "Daily Update for " + dog.getName(),
+                noteRequest.getNote(),
+                notifData,
+                client.getEmail()
+        );
 
         return DailyNoteResponse.builder()
                 .date(noteRequest.getDate())

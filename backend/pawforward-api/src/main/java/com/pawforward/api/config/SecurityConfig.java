@@ -52,6 +52,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public auth endpoints
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        // WebSocket endpoint (auth handled by STOMP interceptor)
+                        .requestMatchers("/ws/**").permitAll()
                         // Stripe webhook
                         .requestMatchers("/api/v1/payments/webhook").permitAll()
                         // Public packages listing

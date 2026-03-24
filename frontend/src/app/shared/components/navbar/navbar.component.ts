@@ -1,13 +1,16 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, effect, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { WebSocketNotificationService } from '../../../core/services/websocket-notification.service';
 import { UserRole } from '../../../core/models';
+import { NotificationBellComponent } from '../notification-bell/notification-bell.component';
+import { NotificationToastComponent } from '../notification-toast/notification-toast.component';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, NotificationBellComponent, NotificationToastComponent],
   template: `
     <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -69,6 +72,9 @@ import { UserRole } from '../../../core/models';
           <!-- Right side: Auth -->
           <div class="flex items-center gap-3">
             @if (isAuthenticated()) {
+              <!-- Notification Bell -->
+              <app-notification-bell />
+
               <!-- Dashboard link based on role -->
               @if (isAdmin()) {
                 <a
@@ -210,10 +216,16 @@ import { UserRole } from '../../../core/models';
         </div>
       }
     </nav>
+
+    <!-- Toast Notification (renders outside nav for proper positioning) -->
+    @if (isAuthenticated()) {
+      <app-notification-toast />
+    }
   `,
 })
-export class NavbarComponent {
+export class NavbarComponent implements OnDestroy {
   private authService = inject(AuthService);
+  private wsService = inject(WebSocketNotificationService);
 
   mobileMenuOpen = false;
 
@@ -221,7 +233,20 @@ export class NavbarComponent {
   isAdmin = computed(() => this.authService.userRole() === UserRole.ADMIN);
   isTrainer = computed(() => this.authService.userRole() === UserRole.TRAINER);
 
+  private authEffect = effect(() => {
+    if (this.authService.isAuthenticated()) {
+      this.wsService.connect();
+    } else {
+      this.wsService.disconnect();
+    }
+  });
+
   logout(): void {
+    this.wsService.disconnect();
     this.authService.logout();
+  }
+
+  ngOnDestroy(): void {
+    this.wsService.disconnect();
   }
 }
