@@ -1,5 +1,6 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject } from '@angular/core';
 import { NgClass } from '@angular/common';
+import { ContactService } from '../../../../core/services/contact.service';
 
 @Component({
   selector: 'app-contact-page',
@@ -132,16 +133,22 @@ import { NgClass } from '@angular/common';
                   }
                 </div>
 
+                @if (submitError()) {
+                  <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <p class="text-red-700 text-sm">{{ submitError() }}</p>
+                  </div>
+                }
+
                 <!-- Submit Button -->
                 <button
                   type="submit"
-                  [disabled]="!formValid()"
+                  [disabled]="!formValid() || submitting()"
                   [ngClass]="{
-                    'bg-[#F59E0B] hover:bg-amber-600 cursor-pointer': formValid(),
-                    'bg-slate-300 cursor-not-allowed': !formValid()
+                    'bg-[#F59E0B] hover:bg-amber-600 cursor-pointer': formValid() && !submitting(),
+                    'bg-slate-300 cursor-not-allowed': !formValid() || submitting()
                   }"
                   class="w-full py-3 rounded-lg text-white font-semibold transition shadow-sm">
-                  Send Message
+                  {{ submitting() ? 'Sending...' : 'Send Message' }}
                 </button>
               </form>
             }
@@ -244,6 +251,8 @@ import { NgClass } from '@angular/common';
   `,
 })
 export class ContactPageComponent {
+  private contactService = inject(ContactService);
+
   // Form fields
   name = signal('');
   email = signal('');
@@ -260,6 +269,8 @@ export class ContactPageComponent {
 
   // Form state
   submitted = signal(false);
+  submitting = signal(false);
+  submitError = signal<string | null>(null);
 
   // FAQ state
   openFaq = signal<number | null>(null);
@@ -328,9 +339,31 @@ export class ContactPageComponent {
     this.emailTouched.set(true);
     this.serviceTouched.set(true);
     this.messageTouched.set(true);
+    this.submitError.set(null);
 
-    if (this.formValid()) {
-      this.submitted.set(true);
+    if (this.formValid() && !this.submitting()) {
+      this.submitting.set(true);
+      this.contactService
+        .submitInquiry({
+          name: this.name().trim(),
+          email: this.email().trim(),
+          phone: this.phone().trim() || undefined,
+          serviceInterest: this.service(),
+          dogName: this.dogName().trim() || undefined,
+          message: this.message().trim(),
+        })
+        .subscribe({
+          next: () => {
+            this.submitting.set(false);
+            this.submitted.set(true);
+          },
+          error: () => {
+            this.submitting.set(false);
+            this.submitError.set(
+              'Something went wrong. Please try again or email us directly.'
+            );
+          },
+        });
     }
   }
 

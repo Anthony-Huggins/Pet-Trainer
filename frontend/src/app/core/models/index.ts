@@ -9,6 +9,7 @@ export * from './review.model';
 export * from './training-log.model';
 export * from './board-train.model';
 export * from './admin.model';
+export * from './referral.model';
 
 export interface PageResponse<T> {
   content: T[];

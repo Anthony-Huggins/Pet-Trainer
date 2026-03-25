@@ -35,7 +35,8 @@
       "Bash(xargs grep:*)",
       "Bash(grep -n \"notification\" /c/Users/langn/Skillstorm/Training/projects/PetTraning/backend/pawforward-api/src/main/resources/db/migration/*.sql -i)",
       "Bash(grep -n \"@Configuration\\\\|@Bean\\\\|WebSocket\\\\|Mail\\\\|@Service\" /c/Users/langn/Skillstorm/Training/projects/PetTraning/backend/pawforward-api/src/main/java/com/pawforward/api/config/*.java)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(find /c/Users/langn/Skillstorm/Training/projects/PetTraning/backend -type f \\\\\\(-name *Review* -o -name *Contact* -o -name *Referral* \\\\\\))"
     ]
   }
 }

@@ -78,4 +78,11 @@ export const DASHBOARD_ROUTES: Routes = [
         (m) => m.NotificationsComponent
       ),
   },
+  {
+    path: 'referrals',
+    loadComponent: () =>
+      import('./pages/referral-dashboard/referral-dashboard.component').then(
+        (m) => m.ReferralDashboardComponent
+      ),
+  },
 ];

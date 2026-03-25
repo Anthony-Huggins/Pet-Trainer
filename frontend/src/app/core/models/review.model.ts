@@ -14,3 +14,11 @@ export interface Review {
   trainerName?: string;
   serviceName?: string;
 }
+
+export interface ReviewRequest {
+  trainerId?: string;
+  serviceTypeId?: string;
+  rating: number;
+  title?: string;
+  body?: string;
+}
