@@ -20,6 +20,18 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- WebClient for calling the main API -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+
+        <!-- Jackson -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -34,8 +46,6 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <!-- MCP dependencies will be added in Phase 11 when Spring AI MCP starters are integrated -->
 
     <build>
         <plugins>
