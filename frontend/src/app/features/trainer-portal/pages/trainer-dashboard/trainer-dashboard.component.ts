@@ -1,5 +1,6 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { TrainingService } from '../../../../core/services/training.service';
 import { BoardTrainService } from '../../../../core/services/board-train.service';
 import { TrainingLog, BoardTrainProgram } from '../../../../core/models';
@@ -7,7 +8,7 @@ import { TrainingLog, BoardTrainProgram } from '../../../../core/models';
 @Component({
   selector: 'app-trainer-dashboard',
   standalone: true,
-  imports: [CommonModule, DatePipe],
+  imports: [CommonModule, DatePipe, RouterLink],
   template: `
     <div class="min-h-screen bg-slate-100">
       <div class="max-w-6xl mx-auto py-10 px-6">
@@ -59,6 +60,46 @@ import { TrainingLog, BoardTrainProgram } from '../../../../core/models';
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+          <a routerLink="/trainer/log/new"
+             class="flex flex-col items-center gap-3 bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:border-[#0D7377]/40 hover:shadow-md transition group">
+            <div class="w-11 h-11 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200 transition">
+              <svg class="w-5 h-5 text-emerald-700" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+            </div>
+            <span class="text-sm font-medium text-slate-700">New Training Log</span>
+          </a>
+          <a routerLink="/trainer/schedule"
+             class="flex flex-col items-center gap-3 bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:border-[#0D7377]/40 hover:shadow-md transition group">
+            <div class="w-11 h-11 rounded-lg bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition">
+              <svg class="w-5 h-5 text-blue-700" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+              </svg>
+            </div>
+            <span class="text-sm font-medium text-slate-700">My Schedule</span>
+          </a>
+          <a routerLink="/trainer/clients"
+             class="flex flex-col items-center gap-3 bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:border-[#0D7377]/40 hover:shadow-md transition group">
+            <div class="w-11 h-11 rounded-lg bg-amber-100 flex items-center justify-center group-hover:bg-amber-200 transition">
+              <svg class="w-5 h-5 text-amber-700" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+              </svg>
+            </div>
+            <span class="text-sm font-medium text-slate-700">My Clients</span>
+          </a>
+          <a routerLink="/trainer/availability"
+             class="flex flex-col items-center gap-3 bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:border-[#0D7377]/40 hover:shadow-md transition group">
+            <div class="w-11 h-11 rounded-lg bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition">
+              <svg class="w-5 h-5 text-purple-700" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <span class="text-sm font-medium text-slate-700">Availability</span>
+          </a>
         </div>
 
         <!-- Today's Schedule (mock data - requires scheduling service) -->

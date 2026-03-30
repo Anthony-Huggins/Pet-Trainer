@@ -10,10 +10,16 @@ import {
   ClassSeries,
 } from '../models';
 
+export interface CheckoutResponse {
+  checkoutUrl: string;
+  sessionId: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class BookingService {
   private readonly bookingsUrl = `${environment.apiUrl}/bookings`;
   private readonly schedulingUrl = `${environment.apiUrl}/scheduling`;
+  private readonly paymentsUrl = `${environment.apiUrl}/payments`;
 
   constructor(private http: HttpClient) {}
 
@@ -29,6 +35,10 @@ export class BookingService {
 
   createBooking(request: BookingRequest): Observable<Booking> {
     return this.http.post<Booking>(this.bookingsUrl, request);
+  }
+
+  checkoutBooking(bookingId: string): Observable<CheckoutResponse> {
+    return this.http.post<CheckoutResponse>(`${this.paymentsUrl}/checkout/booking`, { bookingId });
   }
 
   cancelBooking(bookingId: string, reason?: string): Observable<Booking> {

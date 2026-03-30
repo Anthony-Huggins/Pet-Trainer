@@ -1,89 +1,34 @@
-import { Component, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Component, OnInit, inject } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-booking-success',
   standalone: true,
-  imports: [RouterLink],
+  imports: [],
   template: `
     <div class="max-w-2xl mx-auto py-20 px-6 text-center">
-      <!-- Animated Green Checkmark -->
       <div class="relative w-24 h-24 mx-auto mb-8">
         <div class="absolute inset-0 bg-green-100 rounded-full animate-ping opacity-25"></div>
         <div class="relative w-24 h-24 bg-green-100 rounded-full flex items-center justify-center">
-          <svg
-            class="w-12 h-12 text-green-600 animate-[scale-in_0.3s_ease-out_0.2s_both]"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            stroke-width="2.5"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M5 13l4 4L19 7"
-              class="animate-[draw-check_0.4s_ease-out_0.4s_both]"
-              style="stroke-dasharray: 24; stroke-dashoffset: 24; animation: draw-check 0.4s ease-out 0.4s forwards;"
-            />
+          <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </div>
       </div>
-
-      <!-- Heading -->
-      <h1 class="text-3xl font-bold text-slate-800 mb-3">Booking Confirmed!</h1>
-
-      <!-- Summary -->
-      <p class="text-lg text-slate-500 mb-4 max-w-md mx-auto">
-        Your training session has been booked and payment was processed successfully.
-        You'll receive a confirmation email shortly.
-      </p>
-
-      @if (sessionId()) {
-        <p class="text-sm text-slate-400 mb-10">
-          Payment reference: <span class="font-mono">{{ sessionId() }}</span>
-        </p>
-      } @else {
-        <div class="mb-10"></div>
-      }
-
-      <!-- Action Buttons -->
-      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-        <a
-          routerLink="/dashboard/bookings"
-          class="w-full sm:w-auto px-8 py-3 bg-[#0D7377] text-white font-semibold rounded-xl hover:bg-[#0a5c5f] transition-colors text-center"
-        >
-          View My Bookings
-        </a>
-        <a
-          routerLink="/dashboard/payments"
-          class="w-full sm:w-auto px-8 py-3 border-2 border-[#0D7377] text-[#0D7377] font-semibold rounded-xl hover:bg-teal-50 transition-colors text-center"
-        >
-          Payment History
-        </a>
-        <a
-          routerLink="/dashboard"
-          class="text-slate-500 hover:text-slate-700 font-medium transition-colors"
-        >
-          Go to Dashboard
-        </a>
-      </div>
+      <h1 class="text-3xl font-bold text-slate-800 mb-3">Payment Successful!</h1>
+      <p class="text-lg text-slate-500 mb-4">Your booking is confirmed. Redirecting to your dashboard...</p>
+      <p class="text-sm text-slate-400">If you are not redirected, <a href="/dashboard/bookings" class="text-[#0D7377] underline">click here</a>.</p>
     </div>
   `,
-  styles: [`
-    @keyframes draw-check {
-      to { stroke-dashoffset: 0; }
-    }
-  `],
 })
 export class BookingSuccessComponent implements OnInit {
-  sessionId = signal<string | null>(null);
-
-  constructor(private route: ActivatedRoute) {}
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   ngOnInit(): void {
-    const sid = this.route.snapshot.queryParamMap.get('session_id');
-    if (sid) {
-      this.sessionId.set(sid);
-    }
+    // Redirect to dashboard after a brief success flash
+    setTimeout(() => {
+      this.router.navigate(['/dashboard/bookings']);
+    }, 2000);
   }
 }

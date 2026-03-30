@@ -34,6 +34,11 @@ public class DogController {
         return ResponseEntity.ok(dogService.getMyDogs());
     }
 
+    @GetMapping("/trainer")
+    public ResponseEntity<List<DogResponse>> getTrainerDogs() {
+        return ResponseEntity.ok(dogService.getTrainerDogs());
+    }
+
     @GetMapping("/{dogId}")
     public ResponseEntity<DogResponse> getDog(@PathVariable UUID dogId) {
         return ResponseEntity.ok(dogService.getDog(dogId));

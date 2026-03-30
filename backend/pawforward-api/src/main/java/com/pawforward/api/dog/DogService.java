@@ -1,10 +1,13 @@
 package com.pawforward.api.dog;
 
+import com.pawforward.api.booking.BookingRepository;
 import com.pawforward.api.dog.dto.DogRequest;
 import com.pawforward.api.dog.dto.DogResponse;
 import com.pawforward.api.dog.dto.DogVaccinationRequest;
 import com.pawforward.api.dog.dto.DogVaccinationResponse;
 import com.pawforward.api.security.SecurityUtils;
+import com.pawforward.api.trainer.TrainerProfile;
+import com.pawforward.api.trainer.TrainerProfileRepository;
 import com.pawforward.api.user.User;
 import com.pawforward.api.user.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -21,13 +24,19 @@ public class DogService {
     private final DogRepository dogRepository;
     private final DogVaccinationRepository vaccinationRepository;
     private final UserRepository userRepository;
+    private final BookingRepository bookingRepository;
+    private final TrainerProfileRepository trainerProfileRepository;
 
     public DogService(DogRepository dogRepository,
                       DogVaccinationRepository vaccinationRepository,
-                      UserRepository userRepository) {
+                      UserRepository userRepository,
+                      BookingRepository bookingRepository,
+                      TrainerProfileRepository trainerProfileRepository) {
         this.dogRepository = dogRepository;
         this.vaccinationRepository = vaccinationRepository;
         this.userRepository = userRepository;
+        this.bookingRepository = bookingRepository;
+        this.trainerProfileRepository = trainerProfileRepository;
     }
 
     @Transactional(readOnly = true)
@@ -135,6 +144,16 @@ public class DogService {
         }
 
         vaccinationRepository.delete(vaccination);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DogResponse> getTrainerDogs() {
+        User currentUser = getCurrentUser();
+        TrainerProfile trainer = trainerProfileRepository.findByUserId(currentUser.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Trainer profile not found"));
+        return bookingRepository.findDistinctDogsByTrainerId(trainer.getId()).stream()
+                .map(DogResponse::from)
+                .toList();
     }
 
     // --- Helpers ---

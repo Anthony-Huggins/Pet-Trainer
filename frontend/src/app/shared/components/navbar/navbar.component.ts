@@ -92,18 +92,20 @@ import { NotificationToastComponent } from '../notification-toast/notification-t
                   Trainer Portal
                 </a>
               }
-              <a
-                routerLink="/dashboard"
-                class="hidden sm:inline-flex px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-teal-700 hover:bg-teal-50 transition"
-              >
-                Dashboard
-              </a>
-              <a
-                routerLink="/book"
-                class="hidden sm:inline-flex bg-teal-600 hover:bg-teal-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition"
-              >
-                Book Now
-              </a>
+              @if (isClient()) {
+                <a
+                  routerLink="/dashboard"
+                  class="hidden sm:inline-flex px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-teal-700 hover:bg-teal-50 transition"
+                >
+                  Dashboard
+                </a>
+                <a
+                  routerLink="/book"
+                  class="hidden sm:inline-flex bg-teal-600 hover:bg-teal-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition"
+                >
+                  Book Now
+                </a>
+              }
               <button
                 (click)="logout()"
                 class="text-sm text-slate-500 hover:text-slate-700 transition"
@@ -197,20 +199,40 @@ import { NotificationToastComponent } from '../notification-toast/notification-t
 
             @if (isAuthenticated()) {
               <hr class="border-slate-200 my-2" />
-              <a
-                routerLink="/dashboard"
-                (click)="mobileMenuOpen = false"
-                class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-teal-50"
-              >
-                Dashboard
-              </a>
-              <a
-                routerLink="/book"
-                (click)="mobileMenuOpen = false"
-                class="block px-3 py-2 rounded-lg text-sm font-medium text-teal-700 bg-teal-50"
-              >
-                Book Now
-              </a>
+              @if (isAdmin()) {
+                <a
+                  routerLink="/admin"
+                  (click)="mobileMenuOpen = false"
+                  class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-teal-50"
+                >
+                  Admin
+                </a>
+              }
+              @if (isTrainer()) {
+                <a
+                  routerLink="/trainer"
+                  (click)="mobileMenuOpen = false"
+                  class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-teal-50"
+                >
+                  Trainer Portal
+                </a>
+              }
+              @if (isClient()) {
+                <a
+                  routerLink="/dashboard"
+                  (click)="mobileMenuOpen = false"
+                  class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-teal-50"
+                >
+                  Dashboard
+                </a>
+                <a
+                  routerLink="/book"
+                  (click)="mobileMenuOpen = false"
+                  class="block px-3 py-2 rounded-lg text-sm font-medium text-teal-700 bg-teal-50"
+                >
+                  Book Now
+                </a>
+              }
             }
           </div>
         </div>
@@ -232,6 +254,7 @@ export class NavbarComponent implements OnDestroy {
   isAuthenticated = this.authService.isAuthenticated;
   isAdmin = computed(() => this.authService.userRole() === UserRole.ADMIN);
   isTrainer = computed(() => this.authService.userRole() === UserRole.TRAINER);
+  isClient = computed(() => this.authService.userRole() === UserRole.CLIENT);
 
   private authEffect = effect(() => {
     if (this.authService.isAuthenticated()) {

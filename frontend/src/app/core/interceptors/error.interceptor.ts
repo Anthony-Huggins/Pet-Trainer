@@ -9,7 +9,11 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401) {
-        router.navigate(['/auth/login']);
+        // Don't redirect during session restore or token refresh
+        const isAuthEndpoint = req.url.includes('/auth/me') || req.url.includes('/auth/refresh');
+        if (!isAuthEndpoint) {
+          router.navigate(['/auth/login']);
+        }
       }
       return throwError(() => error);
     })

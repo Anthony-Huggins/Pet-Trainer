@@ -157,7 +157,7 @@ public class TrainingService {
                         : null)
                 .behaviorNotes(req.getBehaviorNotes())
                 .homework(req.getHomework())
-                .rating(req.getRating())
+                .rating(req.getRating() != null ? req.getRating().shortValue() : null)
                 .build();
 
         log = logRepository.save(log);

@@ -32,4 +32,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
     @Query("SELECT DISTINCT b.client FROM Booking b WHERE b.session.trainer.id = :trainerId AND b.status <> 'CANCELLED'")
     List<com.pawforward.api.user.User> findDistinctClientsByTrainerId(@Param("trainerId") UUID trainerId);
+
+    @Query("SELECT DISTINCT b.dog FROM Booking b WHERE b.session.trainer.id = :trainerId AND b.status <> 'CANCELLED'")
+    List<com.pawforward.api.dog.Dog> findDistinctDogsByTrainerId(@Param("trainerId") UUID trainerId);
 }

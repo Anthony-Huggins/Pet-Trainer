@@ -72,7 +72,7 @@ public class TrainingLog {
     @Column(columnDefinition = "TEXT")
     private String homework;
 
-    private Integer rating;
+    private Short rating;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

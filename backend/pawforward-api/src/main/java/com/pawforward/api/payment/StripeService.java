@@ -174,6 +174,7 @@ public class StripeService {
         }
     }
 
+    @Transactional
     public void handleWebhookEvent(String payload, String sigHeader) {
         Event event;
         try {
@@ -187,10 +188,17 @@ public class StripeService {
         }
 
         if ("checkout.session.completed".equals(event.getType())) {
-            Session session = (Session) event.getDataObjectDeserializer()
-                    .getObject()
-                    .orElseThrow(() -> new IllegalStateException("Failed to deserialize checkout session"));
-            processSuccessfulPayment(session);
+            try {
+                Session session = (Session) event.getDataObjectDeserializer()
+                        .getObject()
+                        .orElseThrow(() -> new IllegalStateException("Failed to deserialize checkout session"));
+                log.info("Processing checkout.session.completed: metadata={}", session.getMetadata());
+                processSuccessfulPayment(session);
+                log.info("Successfully processed payment for session {}", session.getId());
+            } catch (Exception e) {
+                log.error("Failed to process checkout.session.completed: {} - {}", e.getClass().getSimpleName(), e.getMessage(), e);
+                throw e;
+            }
         } else {
             log.info("Unhandled Stripe event type: {}", event.getType());
         }
@@ -201,6 +209,11 @@ public class StripeService {
         Map<String, String> metadata = session.getMetadata();
         String type = metadata.get("type");
         String userId = metadata.get("userId");
+
+        if (type == null || userId == null) {
+            log.warn("Ignoring checkout.session.completed with missing metadata: type={}, userId={}", type, userId);
+            return;
+        }
 
         User user = userRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
@@ -229,18 +242,21 @@ public class StripeService {
             booking.setStatus(BookingStatus.CONFIRMED);
             bookingRepository.save(booking);
 
-            // Dispatch payment received notification
-            Map<String, Object> notifData = new HashMap<>();
-            notifData.put("clientName", user.getFullName());
-            notifData.put("amount", amount.toPlainString());
-            notifData.put("description", payment.getDescription());
-            notifData.put("bookingId", bookingId.toString());
+            // Dispatch booking confirmed notification (now that payment is done)
+            Map<String, Object> bookingData = new HashMap<>();
+            bookingData.put("clientName", user.getFullName());
+            bookingData.put("serviceName", booking.getSession().getServiceType().getName());
+            bookingData.put("date", booking.getSession().getSessionDate().toString());
+            bookingData.put("time", booking.getSession().getStartTime().toString());
+            bookingData.put("bookingId", bookingId.toString());
+            bookingData.put("amount", amount.toPlainString());
             notificationDispatcher.dispatchNotification(
                     user.getId(),
-                    NotificationType.PAYMENT_RECEIVED,
-                    "Payment Received",
-                    "Your payment of $" + amount.toPlainString() + " has been received.",
-                    notifData,
+                    NotificationType.BOOKING_CONFIRMED,
+                    "Booking Confirmed & Payment Received",
+                    "Your booking for " + booking.getSession().getServiceType().getName()
+                            + " has been confirmed. Payment of $" + amount.toPlainString() + " received.",
+                    bookingData,
                     user.getEmail()
             );
 

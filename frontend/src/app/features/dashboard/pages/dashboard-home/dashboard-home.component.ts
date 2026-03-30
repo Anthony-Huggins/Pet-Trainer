@@ -234,7 +234,7 @@ export class DashboardHomeComponent implements OnInit {
   loading = signal(true);
 
   upcomingBookings = computed(() =>
-    this.bookings().filter(b => b.status === BookingStatus.CONFIRMED)
+    this.bookings().filter(b => b.status === BookingStatus.CONFIRMED || b.status === BookingStatus.PENDING_PAYMENT)
   );
 
   upcomingCount = computed(() => this.upcomingBookings().length);

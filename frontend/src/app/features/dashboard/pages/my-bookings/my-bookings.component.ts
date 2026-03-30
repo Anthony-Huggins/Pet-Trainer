@@ -142,6 +142,14 @@ type TabType = 'upcoming' | 'past' | 'cancelled';
                     {{ formatStatus(booking.status) }}
                   </span>
 
+                  <!-- Complete Payment Button -->
+                  @if (booking.status === BookingStatus.PENDING_PAYMENT) {
+                    <button (click)="completePayment(booking)"
+                            class="text-sm font-medium text-white bg-[#0D7377] hover:bg-teal-800 px-3 py-1.5 rounded-lg transition">
+                      Complete Payment
+                    </button>
+                  }
+
                   <!-- Cancel Button -->
                   @if (booking.status === BookingStatus.CONFIRMED) {
                     <button (click)="cancelBooking(booking)"
@@ -175,7 +183,7 @@ export class MyBookingsComponent implements OnInit {
 
   upcomingBookings = computed(() =>
     this.bookings().filter(b =>
-      b.status === BookingStatus.CONFIRMED || b.status === BookingStatus.WAITLISTED
+      b.status === BookingStatus.CONFIRMED || b.status === BookingStatus.WAITLISTED || b.status === BookingStatus.PENDING_PAYMENT
     )
   );
 
@@ -222,8 +230,19 @@ export class MyBookingsComponent implements OnInit {
     });
   }
 
+  completePayment(booking: Booking): void {
+    this.bookingService.checkoutBooking(booking.id).subscribe({
+      next: (response) => {
+        window.location.href = response.checkoutUrl;
+      },
+      error: () => alert('Failed to start payment. Please try again.'),
+    });
+  }
+
   getStatusClasses(status: BookingStatus): string {
     switch (status) {
+      case BookingStatus.PENDING_PAYMENT:
+        return 'bg-yellow-100 text-yellow-800';
       case BookingStatus.CONFIRMED:
         return 'bg-emerald-100 text-emerald-800';
       case BookingStatus.COMPLETED:
@@ -240,7 +259,9 @@ export class MyBookingsComponent implements OnInit {
   }
 
   formatStatus(status: BookingStatus): string {
-    return status.charAt(0) + status.slice(1).toLowerCase().replace('_', ' ');
+    if (status === BookingStatus.PENDING_PAYMENT) return 'Pending Payment';
+    if (status === BookingStatus.NO_SHOW) return 'No Show';
+    return status.charAt(0) + status.slice(1).toLowerCase();
   }
 
   formatDate(dateStr: string): string {

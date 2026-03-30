@@ -213,7 +213,7 @@ export class TrainingLogCreateComponent implements OnInit {
 
   ngOnInit(): void {
     this.dogsLoading.set(true);
-    this.dogService.getMyDogs().subscribe({
+    this.dogService.getTrainerDogs().subscribe({
       next: (dogs) => {
         this.dogs.set(dogs);
         this.dogsLoading.set(false);

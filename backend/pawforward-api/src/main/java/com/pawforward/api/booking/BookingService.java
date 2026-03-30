@@ -111,26 +111,12 @@ public class BookingService {
                 .session(session)
                 .client(client)
                 .dog(dog)
-                .status(BookingStatus.CONFIRMED)
+                .status(BookingStatus.PENDING_PAYMENT)
                 .build();
 
         booking = bookingRepository.save(booking);
 
-        // Dispatch booking confirmed notification
-        Map<String, Object> data = new HashMap<>();
-        data.put("clientName", client.getFullName());
-        data.put("serviceName", session.getServiceType().getName());
-        data.put("date", session.getSessionDate().toString());
-        data.put("time", session.getStartTime().toString());
-        data.put("bookingId", booking.getId().toString());
-        notificationDispatcher.dispatchNotification(
-                client.getId(),
-                NotificationType.BOOKING_CONFIRMED,
-                "Booking Confirmed",
-                "Your booking for " + session.getServiceType().getName() + " has been confirmed.",
-                data,
-                client.getEmail()
-        );
+        // Notification will be sent after payment is confirmed via Stripe webhook
 
         return BookingResponse.from(booking);
     }

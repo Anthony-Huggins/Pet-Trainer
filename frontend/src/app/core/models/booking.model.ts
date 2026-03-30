@@ -17,6 +17,7 @@ export interface BookingRequest {
 }
 
 export enum BookingStatus {
+  PENDING_PAYMENT = 'PENDING_PAYMENT',
   CONFIRMED = 'CONFIRMED',
   CANCELLED = 'CANCELLED',
   WAITLISTED = 'WAITLISTED',

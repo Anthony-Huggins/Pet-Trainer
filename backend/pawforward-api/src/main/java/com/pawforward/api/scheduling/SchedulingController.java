@@ -81,7 +81,6 @@ public class SchedulingController {
     // --- Admin/Trainer: create sessions and class series ---
 
     @PostMapping("/sessions")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TRAINER')")
     public ResponseEntity<SessionResponse> createSession(
             @Valid @RequestBody SessionRequest request) {
         SessionResponse session = schedulingService.createSession(request);

@@ -44,7 +44,7 @@ public class TrainingLogResponse {
                 .skillsWorked(log.getSkillsWorked() != null ? Arrays.asList(log.getSkillsWorked()) : List.of())
                 .behaviorNotes(log.getBehaviorNotes())
                 .homework(log.getHomework())
-                .rating(log.getRating())
+                .rating(log.getRating() != null ? log.getRating().intValue() : null)
                 .createdAt(log.getCreatedAt())
                 .media(log.getMedia() != null
                         ? log.getMedia().stream().map(TrainingMediaResponse::from).toList()

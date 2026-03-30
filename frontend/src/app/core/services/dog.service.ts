@@ -19,6 +19,10 @@ export class DogService {
     return this.http.get<Dog[]>(this.apiUrl);
   }
 
+  getTrainerDogs(): Observable<Dog[]> {
+    return this.http.get<Dog[]>(`${this.apiUrl}/trainer`);
+  }
+
   getDog(dogId: string): Observable<Dog> {
     return this.http.get<Dog>(`${this.apiUrl}/${dogId}`);
   }
