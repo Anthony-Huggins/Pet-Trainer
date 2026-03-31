@@ -10,6 +10,10 @@ pawforward:
     base-url: http://localhost:8080/api/v1
     service-key: ${PAWFORWARD_SERVICE_KEY:dev-service-key}
 
+anthropic:
+  api-key: ${ANTHROPIC_API_KEY}
+  model: ${ANTHROPIC_MODEL:claude-sonnet-4-20250514}
+
 logging:
   level:
     com.pawforward.mcp: DEBUG

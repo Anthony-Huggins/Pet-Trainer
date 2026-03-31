@@ -89,7 +89,8 @@
       "Bash(powershell -Command \"Get-Process stripe -ErrorAction SilentlyContinue | Select-Object Id\")",
       "Bash(taskkill //PID 44968 //F)",
       "Bash(taskkill //PID 38480 //F)",
-      "Bash(taskkill //PID 3192 //F)"
+      "Bash(taskkill //PID 3192 //F)",
+      "Bash(mvn clean:*)"
     ]
   }
 }
